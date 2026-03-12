@@ -1,0 +1,31 @@
+# ── Environment ──
+.env
+.env.local
+.env.*.local
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# ── Node / Next.js ──
+node_modules/
+frontend/.next/
+frontend/out/
+
+# ── Generated data files (large, re-creatable via setup.sh) ──
+scripts/postgres_rag_data_*.json
+
+# ── PostgreSQL source (downloaded by setup.sh, not committed) ──
+postgresql-*/
+scriptv2/
+
+# ── OS / IDE ──
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
