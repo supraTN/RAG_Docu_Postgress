@@ -1,14 +1,29 @@
 .DEFAULT_GOAL := help
 
+# ── OS / shell detection ──────────────────────────────────────────────────────
+# On Windows: use .bat if bash is not available, bash scripts otherwise
+ifeq ($(OS),Windows_NT)
+    ifeq ($(shell where bash 2>nul),)
+        SETUP_CMD = scripts\setup.bat
+        START_CMD  = scripts\start.bat
+    else
+        SETUP_CMD = bash scripts/setup.sh
+        START_CMD  = bash scripts/start.sh
+    endif
+else
+    SETUP_CMD = bash scripts/setup.sh
+    START_CMD  = bash scripts/start.sh
+endif
+
 # ── Setup ─────────────────────────────────────────────────────────────────────
 setup: ## Full first-time setup: download docs, start DB, embed + install all deps
-	bash scripts/setup.sh
+	$(SETUP_CMD)
 	pip install -q -r backend/requirements-dev.txt
 	pip install -q -r benchmark/requirements.txt
 
 # ── Development ───────────────────────────────────────────────────────────────
 start: ## Start both frontend and backend
-	bash scripts/start.sh
+	$(START_CMD)
 
 backend: ## Start FastAPI backend only (with hot reload)
 	cd backend && uvicorn main:app --reload --port 8000
