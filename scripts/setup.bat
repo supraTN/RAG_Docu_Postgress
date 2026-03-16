@@ -13,7 +13,7 @@ set PG_VERSION=16.10
 set PG_DIR=%ROOT%\postgresql-%PG_VERSION%
 set SCRIPTS_DIR=%ROOT%\scripts
 set ENV_FILE=%ROOT%\.env
-set CHUNKS_FILE=%SCRIPTS_DIR%\postgres_rag_data_v6_perfect.json
+set CHUNKS_FILE=%SCRIPTS_DIR%\postgres_rag_data_v8.json
 
 :: ── 0. Check prerequisites ──────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ if exist "%CHUNKS_FILE%" (
   echo [setup] Chunking PostgreSQL HTML docs...
   cd /d "%SCRIPTS_DIR%"
   python chunk_docs.py
-  echo [setup] Chunks written to scripts\postgres_rag_data_v6_perfect.json
+  echo [setup] Chunks written to scripts\postgres_rag_data_v8.json
 )
 
 :: ── 5. Generate embeddings → PGVector ───────────────────────────────────────

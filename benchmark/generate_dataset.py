@@ -41,7 +41,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 #  Config
 # ─────────────────────────────────────────────
 
-CHUNKS_FILE = Path(__file__).parent.parent / "scripts" / "postgres_rag_data_v6_perfect.json"
+CHUNKS_FILE = Path(__file__).parent.parent / "scripts" / "postgres_rag_data_v8.json"
 DEFAULT_OUTPUT = Path(__file__).parent / "eval_dataset.json"
 
 QA_GENERATION_PROMPT = """\
@@ -55,8 +55,6 @@ Given the documentation excerpt below, generate exactly ONE question and its exp
 
 Respond ONLY with valid JSON, no markdown fences:
 {"question": "...", "answer": "..."}
-
-Documentation excerpt:
 """
 
 QA_USERSTYLE_PROMPT = """\
@@ -95,9 +93,8 @@ Respond with a single JSON object:
 
 - true  → the excerpt contains all the information needed to answer the question correctly.
 - false → the question requires context that is missing from this excerpt (chunk too short,
-          concept cut mid-way, answer references something not in the excerpt).
+          concept cut mid-way, answer references something not in this excerpt).
 """
-
 
 # ─────────────────────────────────────────────
 #  Chunk loading & quality report
@@ -162,12 +159,45 @@ def print_chunk_report(all_chunks: list[dict]):
 
     print("─" * 67 + "\n")
 
+# ─────────────────────────────────────────────
+#  Chunk helpers
+# ─────────────────────────────────────────────
+
+def _parse_chunk_index(chunk_id: str) -> tuple[str, int] | tuple[None, None]:
+    try:
+        parts = chunk_id.rsplit("_", 1)
+        return parts[0], int(parts[1])
+    except (ValueError, IndexError):
+        return None, None
+
+
+def build_acceptable_chunk_ids(chunk: dict, all_chunks: list[dict], window: int = 1) -> list[str]:
+    """
+    Return source chunk ±window adjacent chunks from the same file.
+    This reduces false misses when the answer spans chunk boundaries.
+    """
+    source_id = chunk["id"]
+    source_file, source_idx = _parse_chunk_index(source_id)
+
+    if source_file is None:
+        return [source_id]
+
+    acceptable = []
+    for c in all_chunks:
+        cid = c.get("id", "")
+        c_file, c_idx = _parse_chunk_index(cid)
+        if c_file == source_file and c_idx is not None and abs(c_idx - source_idx) <= window:
+            acceptable.append(cid)
+
+    return sorted(set(acceptable), key=lambda x: _parse_chunk_index(x)[1] if _parse_chunk_index(x)[1] is not None else 10**9)
 
 # ─────────────────────────────────────────────
 #  Q&A generation
 # ─────────────────────────────────────────────
 
-def _parse_json_response(raw: str) -> dict | None:
+def _parse_json_response(raw) -> dict | None:
+    if isinstance(raw, list):
+        raw = next((b["text"] for b in raw if isinstance(b, dict) and b.get("type") == "text"), "")
     raw = raw.strip()
     if raw.startswith("```"):
         lines = raw.split("\n")
@@ -178,7 +208,7 @@ def _parse_json_response(raw: str) -> dict | None:
         return None
 
 
-def generate_qa_from_chunk(chunk: dict, style: str = "technical") -> dict | None:
+def generate_qa_from_chunk(chunk: dict, all_chunks: list[dict], style: str = "technical") -> dict | None:
     """Generate a (question, answer) pair strictly from a single chunk."""
     prompt = QA_USERSTYLE_PROMPT if style == "userstyle" else QA_GENERATION_PROMPT
     messages = [
@@ -201,6 +231,7 @@ def generate_qa_from_chunk(chunk: dict, style: str = "technical") -> dict | None
         "question": question,
         "expected_answer": answer,
         "source_chunk_id": chunk["id"],
+        "acceptable_chunk_ids": build_acceptable_chunk_ids(chunk, all_chunks, window=1),
         "source_chunk_content": chunk["content"],
         "source_file": chunk["source"],
         "source_title": chunk["title"],
@@ -208,10 +239,39 @@ def generate_qa_from_chunk(chunk: dict, style: str = "technical") -> dict | None
         "token_count": chunk["token_count"],
     }
 
-
 # ─────────────────────────────────────────────
 #  Self-containment validation
 # ─────────────────────────────────────────────
+
+def is_bad_userstyle_chunk(chunk: dict) -> bool:
+    source = chunk.get("source", "")
+    title = (chunk.get("title") or "").lower()
+    content = (chunk.get("content") or "").lower()
+
+    bad_sources = {
+        "bookindex.html",
+        "release-16.html",
+        "sql-keywords-appendix.html",
+        "release-16-10.html",
+        "features-sql-standard.html",
+        "unsupported-features-sql-standard.html",
+    }
+
+    if source in bad_sources:
+        return True
+
+    if title.startswith("index"):
+        return True
+    if "appendix" in title:
+        return True
+    if "release " in title:
+        return True
+
+    pipe_count = content.count("|")
+    if pipe_count > 20:
+        return True
+
+    return False
 
 def validate_self_containment(item: dict) -> tuple[bool, str]:
     """
@@ -233,11 +293,9 @@ def validate_self_containment(item: dict) -> tuple[bool, str]:
     parsed = _parse_json_response(response.content)
 
     if not parsed:
-        # If parsing fails, keep the item but flag it as unvalidated
         return True, "validation_parse_error"
 
     return bool(parsed.get("self_contained", True)), parsed.get("reason", "")
-
 
 # ─────────────────────────────────────────────
 #  Main
@@ -271,6 +329,8 @@ def main():
     print(f"Loading chunks from {CHUNKS_FILE.name}...")
     all_chunks, filtered = load_chunks(min_tokens=args.min_tokens)
 
+    filtered = [c for c in filtered if not is_bad_userstyle_chunk(c)]
+
     if args.chunk_report:
         print_chunk_report(all_chunks)
         return
@@ -289,7 +349,7 @@ def main():
     for i, chunk in enumerate(sampled):
         print(f"  [{i + 1:>2}/{len(sampled)}] {chunk['source']} ({chunk['token_count']} tokens)")
 
-        item = generate_qa_from_chunk(chunk, style=args.style)
+        item = generate_qa_from_chunk(chunk, all_chunks, style=args.style)
         if item is None:
             print(f"           ⚠ Invalid LLM output — skipping")
             gen_failed += 1
@@ -343,7 +403,7 @@ def main():
         with open(flagged_path, "w", encoding="utf-8") as f:
             json.dump(flagged, f, ensure_ascii=False, indent=2)
         print(f"\n  Flagged chunks saved → {flagged_path}")
-        print(f"  Review these to improve your chunking strategy in pdf6.py")
+        print(f"  Review these to improve your chunking strategy")
 
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(dataset, f, ensure_ascii=False, indent=2)

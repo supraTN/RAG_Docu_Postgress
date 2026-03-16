@@ -1,20 +1,25 @@
 import { type KeyboardEvent, type RefObject } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Zap, Sparkles } from "lucide-react";
 import { cn } from "@/app/lib/utils";
+import type { ModelOption } from "@/app/types";
 
 interface ChatInputProps {
   input: string;
   isLoading: boolean;
+  model: ModelOption;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   onChange: (value: string) => void;
+  onModelChange: (model: ModelOption) => void;
   onSend: () => void;
 }
 
 export default function ChatInput({
   input,
   isLoading,
+  model,
   textareaRef,
   onChange,
+  onModelChange,
   onSend,
 }: ChatInputProps) {
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -37,15 +42,41 @@ export default function ChatInput({
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
-              placeholder="Posez votre question sur PostgreSQL..."
+              placeholder="Ask a question about PostgreSQL..."
               rows={1}
               className="w-full bg-transparent px-4 py-3 text-[15px] text-white placeholder-zinc-500 focus:outline-none resize-none disabled:opacity-50 leading-relaxed min-h-[50px] max-h-[200px]"
             />
-            <div className="flex items-center justify-end px-2 pb-1">
+            <div className="flex items-center justify-between px-2 pb-1">
+              <div className="flex items-center gap-1 bg-zinc-800/50 rounded-xl p-0.5">
+                <button
+                  onClick={() => onModelChange("gpt-4.1-mini")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    model === "gpt-4.1-mini"
+                      ? "bg-zinc-700 text-white shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-300"
+                  )}
+                >
+                  <Zap className="w-3 h-3" />
+                  4.1-mini
+                </button>
+                <button
+                  onClick={() => onModelChange("gpt-5-mini")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    model === "gpt-5-mini"
+                      ? "bg-blue-600/20 text-blue-400 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-300"
+                  )}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  5-mini
+                </button>
+              </div>
               <button
                 onClick={onSend}
                 disabled={isLoading || !input.trim()}
-                aria-label="Envoyer"
+                aria-label="Send"
                 className={cn(
                   "flex items-center justify-center h-10 w-10 rounded-2xl transition-all",
                   "hover:scale-105 active:scale-95 disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed",
@@ -61,9 +92,6 @@ export default function ChatInput({
             </div>
           </div>
         </div>
-        <p className="text-center text-[11px] text-zinc-600 mt-4 font-medium tracking-wide">
-          gpt-4.1-mini peut faire des erreurs. Vérifiez toujours la documentation officielle.
-        </p>
       </div>
     </div>
   );

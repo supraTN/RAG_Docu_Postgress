@@ -6,16 +6,41 @@ A full-stack **Retrieval-Augmented Generation (RAG)** application that answers q
 
 ---
 
-## Tech Stack
+## What Makes This Interesting Technically
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | Next.js 15, React 19, TypeScript, Tailwind CSS v4 |
-| **Backend** | FastAPI, Python 3.11+ |
-| **LLM** | OpenAI gpt-4.1-mini |
-| **Embeddings** | OpenAI text-embedding-3-small |
-| **Vector Store** | PostgreSQL 16 + pgvector |
-| **ORM / RAG** | LangChain (langchain-postgres, langchain-openai) |
+- **Dual-stage retrieval with graceful fallback** — pgvector cosine similarity retrieves the top-20 candidates, then Cohere Rerank v4 reorders them by semantic relevance. If Cohere is unavailable, a local cross-encoder (`mmarco-mMiniLMv2`) kicks in automatically, so the system works without any external reranking dependency.
+
+- **Adaptive score filtering** — instead of a fixed cutoff, chunks are kept if their reranker score is ≥ `RERANKER_SCORE_RATIO × best_score`. This relative threshold is more robust than a hardcoded value: it adapts to the natural score distribution of each query rather than silently over-filtering or under-filtering.
+
+- **Streaming SSE responses** — the backend streams tokens via Server-Sent Events as soon as the LLM starts generating. The frontend renders the answer progressively with source links and latency appended at the end of the stream.
+
+- **Unbiased evaluation pipeline** — ground-truth Q&A pairs are generated from documentation chunks directly (not from the retriever output), which avoids the circular bias of testing a retriever with data it was implicitly used to generate. Each question is then validated by a second LLM call to confirm it can be answered from a single chunk.
+
+---
+
+## Evaluation Results
+
+Evaluated on 10 natural-language user questions and 39 technical questions from the PostgreSQL 16 docs:
+
+```
+════════════════════════════════════════════════════════════════════════════
+  RAG EVALUATION REPORT — PostgreSQL Docs Assistant
+════════════════════════════════════════════════════════════════════════════
+
+  ── RETRIEVAL ────────────────────────────────────────────────────────────
+  Hit Rate @1          Acceptable chunk ranked 1st          0.900  ██████████████████░░  GOOD
+  Hit Rate @3          Acceptable chunk in top 3            1.000  ████████████████████  GOOD
+  Hit Rate @5          Acceptable chunk in top 5            1.000  ████████████████████  GOOD
+  MRR                  Mean Reciprocal Rank                 0.950  ███████████████████░  GOOD
+
+  ── GENERATION ─────────────────────────────────────────────────────────
+  Faithfulness         Answer grounded in chunks            0.993  ███████████████████░  GOOD
+  Correctness          Answer addresses the question        0.970  ███████████████████░  GOOD
+  Completeness         Answer covers key points             0.970  ███████████████████░  GOOD
+════════════════════════════════════════════════════════════════════════════
+```
+
+On technical questions, Hit Rate @1 reaches **100%** (MRR = 1.0, zero misses).
 
 ---
 
@@ -40,10 +65,49 @@ A full-stack **Retrieval-Augmented Generation (RAG)** application that answers q
 ```
 
 **RAG Flow:**
-1. User question → embedded with `text-embedding-3-small`
-2. Top-10 candidates retrieved from pgvector, reranked with a cross-encoder, top-5 kept
-3. Chunks above the similarity threshold + conversation history → sent to `gpt-4.1-mini`
-4. Answer + source URLs returned to the frontend
+1. User question → embedded with `text-embedding-3-large`
+2. Top-20 candidates retrieved from pgvector, reranked with Cohere Rerank v4 (cross-encoder fallback), top-5 kept
+3. Adaptive filtering: chunks kept if score ≥ `RERANKER_SCORE_RATIO × best_score` (with `RERANKER_THRESHOLD` as absolute floor)
+4. Filtered chunks + conversation history → sent to `gpt-5-mini`
+5. Answer + source URLs returned to the frontend
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | Next.js 15, React 19, TypeScript, Tailwind CSS v4 |
+| **Backend** | FastAPI, Python 3.11+ |
+| **LLM** | OpenAI gpt-5-mini |
+| **Embeddings** | OpenAI text-embedding-3-large |
+| **Reranking** | Cohere Rerank v4 (+ cross-encoder fallback) |
+| **Vector Store** | PostgreSQL 16 + pgvector |
+| **ORM / RAG** | LangChain (langchain-postgres, langchain-openai) |
+
+---
+
+## Quick Start
+
+**Prerequisites:** Python 3.11+, Node.js 18+, Docker, an OpenAI API key (Cohere optional).
+
+```bash
+# 1. Configure environment
+cp .env.example .env                              # add your API keys
+cp frontend/.env.local.example frontend/.env.local
+
+# 2. Full setup: downloads PostgreSQL docs, starts DB, embeds everything
+make setup        # or: bash scripts/setup.sh
+
+# 3. Start the app
+make start        # or: bash scripts/start.sh
+```
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- Swagger docs: http://localhost:8000/docs
+
+See `make help` for all available commands.
 
 ---
 
@@ -52,21 +116,25 @@ A full-stack **Retrieval-Augmented Generation (RAG)** application that answers q
 ```
 .
 ├── backend/
-│   ├── main.py            # FastAPI app, routing, rate limiting
-│   ├── rag_service.py     # RAG pipeline (embedding, retrieval, reranking, LLM)
-│   ├── models.py          # Pydantic request/response models
+│   ├── main.py                    # FastAPI app, routing, rate limiting
+│   ├── rag_service.py             # RAG pipeline (embedding, retrieval, reranking, LLM)
+│   ├── models.py                  # Pydantic request/response models
 │   ├── requirements.txt
-│   └── docker-compose.yml # PostgreSQL + pgvector setup
+│   ├── requirements-dev.txt       # Test & lint dependencies
+│   ├── tests/
+│   │   ├── test_models.py         # Pydantic model validation tests
+│   │   └── test_rag_service.py    # Pure function unit tests
+│   └── docker-compose.yml         # PostgreSQL + pgvector setup
 │
 ├── frontend/
 │   ├── app/
 │   │   ├── page.tsx
 │   │   ├── layout.tsx
-│   │   ├── hooks/useChat.ts          # Chat state & API logic
-│   │   ├── lib/utils.ts              # cn() utility
-│   │   ├── types.ts                  # Shared types & constants
+│   │   ├── hooks/useChat.ts       # Chat state & streaming SSE logic
+│   │   ├── lib/utils.ts           # cn() utility
+│   │   ├── types.ts               # Shared types & constants
 │   │   └── component/
-│   │       ├── ChatInterface.tsx     # Main layout
+│   │       ├── ChatInterface.tsx  # Main layout
 │   │       ├── Sidebar.tsx
 │   │       ├── ChatInput.tsx
 │   │       ├── WelcomeScreen.tsx
@@ -77,70 +145,20 @@ A full-stack **Retrieval-Augmented Generation (RAG)** application that answers q
 │   └── .env.local.example
 │
 ├── scripts/
-│   ├── setup.sh / setup.bat          # Full pipeline (docs → chunks → embeddings)
-│   ├── start.sh  / start.bat         # Start frontend + backend
-│   ├── chunk_docs.py                 # HTML docs → chunked JSON
-│   └── generate_embeddings.py        # JSON chunks → pgvector
+│   ├── setup.sh / setup.bat       # Full pipeline (docs → chunks → embeddings)
+│   ├── start.sh / start.bat       # Start frontend + backend
+│   ├── chunk_docs.py              # HTML docs → chunked JSON
+│   └── generate_embeddings.py     # JSON chunks → pgvector
 │
 ├── benchmark/
-│   ├── generate_dataset.py   # chunk → LLM → (question, answer, source_chunk_id)
-│   ├── evaluate.py           # Hit Rate, MRR, Faithfulness, Answer Relevancy
+│   ├── generate_dataset.py        # chunk → LLM → (question, answer, source_chunk_id)
+│   ├── evaluate.py                # Hit Rate, MRR, Faithfulness, Correctness, Completeness
 │   └── requirements.txt
 │
+├── Makefile
 ├── .env.example
 └── README.md
 ```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.11+
-- Node.js 18+
-- Docker (for PostgreSQL)
-- An [OpenAI API key](https://platform.openai.com/api-keys)
-
-### 1. Environment Variables
-
-```bash
-cp .env.example .env
-# Edit .env with your OpenAI API key and database credentials
-
-cp frontend/.env.local.example frontend/.env.local
-# Edit .env.local if your backend runs on a different port
-```
-
-### 2. Run the setup pipeline
-
-The setup script handles everything: downloading the PostgreSQL docs, starting the database, installing dependencies, chunking and indexing.
-
-**Linux / macOS / Git Bash:**
-```bash
-bash scripts/setup.sh
-```
-
-**Windows:**
-```bat
-scripts\setup.bat
-```
-
-### 3. Start the app
-
-**Linux / macOS / Git Bash:**
-```bash
-bash scripts/start.sh
-```
-
-**Windows:**
-```bat
-scripts\start.bat
-```
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- Swagger docs: http://localhost:8000/docs
 
 ---
 
@@ -152,12 +170,16 @@ All runtime settings are controlled via environment variables — no hardcoded v
 |---|---|---|
 | `OPENAI_API_KEY` | — | OpenAI API key (required) |
 | `DATABASE_URL` | — | PostgreSQL connection string (required) |
-| `LLM_MODEL` | `gpt-4.1-mini` | Chat completion model |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
-| `COLLECTION_NAME` | `postgres_docs_v6` | pgvector collection name |
-| `SIMILARITY_THRESHOLD` | `0.4` | Minimum cosine similarity to include a chunk |
-| `RERANKER_ENABLED` | `true` | Enable cross-encoder reranking |
-| `RERANKER_MODEL` | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Reranker model |
+| `LLM_MODEL` | `gpt-5-mini` | Chat completion model |
+| `EMBEDDING_MODEL` | `text-embedding-3-large` | Embedding model |
+| `COLLECTION_NAME` | `postgres_docs_v9` | pgvector collection name |
+| `SIMILARITY_THRESHOLD` | `0.4` | Minimum cosine similarity (raw embedding scores) |
+| `RERANKER_ENABLED` | `true` | Enable reranking stage |
+| `COHERE_API_KEY` | — | Cohere API key (optional — enables Cohere Rerank) |
+| `COHERE_RERANK_MODEL` | `rerank-v4.0-fast` | Cohere reranker model |
+| `FALLBACK_RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Local cross-encoder fallback |
+| `RERANKER_THRESHOLD` | `0.5` | Absolute minimum reranker score |
+| `RERANKER_SCORE_RATIO` | `0.8` | Keep chunks scoring ≥ ratio × best score |
 | `BASE_DOC_URL` | `https://www.postgresql.org/docs/16/` | Base URL for source links |
 | `ALLOWED_ORIGINS` | `http://localhost:3000` | CORS allowed origins (comma-separated) |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend URL (frontend) |
@@ -190,9 +212,15 @@ Rate limited to **15 requests/minute** per IP.
 }
 ```
 
+### `POST /ask/stream`
+
+Same request body as `/ask`. Returns a `text/event-stream` response with two event types:
+- `{"type": "token", "content": "..."}` — one token at a time
+- `{"type": "done", "sources": [...], "latency_ms": 843}` — final metadata
+
 ### `GET /health`
 
-Returns `{ "status": "ok" }`.
+Returns `{"status": "ok", "db": "ok"}` when both the app and database are reachable. Returns HTTP 503 if the database is down.
 
 ---
 
@@ -205,17 +233,18 @@ The `benchmark/` folder contains a two-step evaluation pipeline that measures **
 | Axis | What it measures | Cost |
 |---|---|---|
 | **Retrieval** | Did the system find the right documentation chunk? | Free (no LLM) |
-| **Generation** | Is the answer faithful and relevant given the chunks? | OpenAI API |
+| **Generation** | Is the answer faithful, correct, and complete? | OpenAI API |
 
 ### Metrics
 
 | Metric | Axis | Description |
 |---|---|---|
-| **Hit Rate @k** | Retrieval | % of questions where the source chunk is in top-k results |
-| **MRR** | Retrieval | Mean Reciprocal Rank — how high does the source chunk rank on average? |
-| **Boundary Hit Rate** | Retrieval | Among misses, % where an adjacent chunk was retrieved — indicates a chunking boundary problem rather than a retrieval problem |
-| **Faithfulness** | Generation | Answer is grounded in the retrieved chunks (no hallucination) |
-| **Answer Relevancy** | Generation | Answer actually addresses the question |
+| **Hit Rate @k** | Retrieval | % of questions where an acceptable chunk appears in top-k results |
+| **MRR** | Retrieval | Mean Reciprocal Rank — how high does the correct chunk rank on average? |
+| **Boundary Hit Rate** | Retrieval | Among misses, % where an adjacent chunk was retrieved — indicates a chunking boundary problem, not a retrieval problem |
+| **Faithfulness** | Generation | Answer is grounded in the retrieved chunks — no hallucination (RAGAS) |
+| **Correctness** | Generation | Answer correctly addresses the question (LLM-as-judge) |
+| **Completeness** | Generation | Answer covers all key points needed (LLM-as-judge) |
 
 ### Dataset generation methodology
 
@@ -226,50 +255,34 @@ chunk (from indexed docs) → LLM → { question, expected_answer, source_chunk_
 ```
 
 This avoids the circular bias of generating ground truths with the same retriever you are testing.
-Each entry includes a `source_url` for manual verification.
+Each entry is validated by a second LLM call to confirm the question is self-contained and answerable from a single chunk.
 
 ### Run the evaluation
 
 ```bash
-cd benchmark
-pip install -r requirements.txt
+# Install benchmark dependencies
+cd benchmark && pip install -r requirements.txt
 
-# Step 1 — Generate evaluation dataset (run once)
+# Generate evaluation dataset (run once)
 python generate_dataset.py                  # 40 questions, auto-validates
 python generate_dataset.py --n 80           # more questions
-python generate_dataset.py --chunk-report   # inspect chunk quality only
 
-# Step 2 — Retrieval-only (fast, free)
-python evaluate.py --retrieval-only
+# Retrieval-only evaluation (fast, no API cost)
+make eval-retrieval
 
-# Step 3 — Full evaluation with RAGAS (retrieval + generation)
-python evaluate.py
-python evaluate.py --limit 10               # quick test on first 10 questions
-python evaluate.py --skip-answer-relevancy  # faithfulness only (cheaper)
+# Full evaluation (retrieval + generation, uses OpenAI API)
+make eval-full
 ```
 
-### Example output
+Results are saved to `benchmark/evaluation_results_*.json` with per-question scores for detailed analysis.
 
-```
-════════════════════════════════════════════════════════════════════════════
-  RAG EVALUATION REPORT — PostgreSQL Docs Assistant
-  Questions : 40   |   Total time : 187.4s   |   2025-03-09 14:22
-════════════════════════════════════════════════════════════════════════════
+---
 
-  ── RETRIEVAL ────────────────────────────────────────────────────────────
-  Hit Rate @1          Source chunk ranked 1st          0.625  ████████████░░░░░░░░  GOOD
-  Hit Rate @3          Source chunk in top 3            0.800  ████████████████░░░░  GOOD
-  Hit Rate @5          Source chunk in top 5            0.875  █████████████████░░░  GOOD
-  MRR                  Mean Reciprocal Rank             0.712  ██████████████░░░░░░  GOOD
-  Boundary Hit Rate    Misses w/ adjacent chunk found   0.200  ████░░░░░░░░░░░░░░░░  OK
+## Known Limitations
 
-  ── GENERATION (RAGAS) ───────────────────────────────────────────────────
-  Faithfulness         Answer grounded in chunks        0.891  ██████████████████░░  GOOD
-  Answer Relevancy     Answer addresses the question    0.847  ████████████████░░░░  GOOD
-════════════════════════════════════════════════════════════════════════════
-```
-
-Results are also saved to `benchmark/evaluation_results.json` for further analysis.
+- The knowledge base is static (PostgreSQL 16 docs only). New PostgreSQL versions require re-running the ingestion pipeline.
+- Conversation history is session-only — there is no persistence across page reloads.
+- The fallback cross-encoder runs on CPU, which adds ~2–3s latency compared to Cohere.
 
 ---
 

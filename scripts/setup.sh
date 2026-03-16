@@ -65,7 +65,7 @@ pip install -q beautifulsoup4 markdownify tiktoken
 
 # ── 4. Chunk HTML docs into JSON ─────────────────────────────────────────────
 
-CHUNKS_FILE="${SCRIPT_DIR}/postgres_rag_data_v6_perfect.json"
+CHUNKS_FILE="${SCRIPT_DIR}/postgres_rag_data_v8.json"
 
 if [ -f "${CHUNKS_FILE}" ]; then
   warning "Chunks file already exists — skipping chunking step."
@@ -74,7 +74,7 @@ else
   info "Chunking PostgreSQL HTML docs..."
   cd "${SCRIPT_DIR}"
   python3 chunk_docs.py
-  info "Chunks written to scripts/postgres_rag_data_v6_perfect.json"
+  info "Chunks written to scripts/postgres_rag_data_v8.json"
 fi
 
 # ── 5. Generate embeddings → PGVector ───────────────────────────────────────
@@ -83,5 +83,5 @@ info "Generating embeddings and loading into PGVector..."
 cd "${SCRIPT_DIR}"
 python3 generate_embeddings.py
 
-info "Pipeline complete. You can now start the backend:"
-info "  cd backend && uvicorn main:app --reload"
+info "Pipeline complete. Start the app with:"
+info "  make start   (or: bash scripts/start.sh)"

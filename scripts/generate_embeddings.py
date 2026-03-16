@@ -1,6 +1,5 @@
 import json
 import os
-import time
 from pathlib import Path
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
@@ -16,8 +15,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is missing from .env")
 
-INPUT_FILE = Path(__file__).parent / "postgres_rag_data_v6_perfect.json"
-COLLECTION_NAME = "postgres_docs_v6"
+INPUT_FILE = Path(__file__).parent / "postgres_rag_data_v8.json"
+COLLECTION_NAME = "postgres_docs_v9"
 BATCH_SIZE = 500
 
 
@@ -26,22 +25,22 @@ def load_chunks():
         raise FileNotFoundError(f"File not found: {INPUT_FILE}")
 
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
-        content = json.load(f)
-    return content
+        return json.load(f)
 
 
 def chunks_to_documents(chunks):
-    """Convert raw chunks to LangChain Document objects."""
     documents = []
     for chunk in chunks:
         doc = Document(
-            page_content=chunk["content"],
+            page_content=chunk.get("embedding_text", chunk["content"]),
             metadata={
                 "id": chunk["id"],
                 "source": chunk["source"],
                 "title": chunk["title"],
+                "section": chunk.get("section", ""),
                 "type": chunk["type"],
                 "token_count": chunk["token_count"],
+                "raw_content": chunk["content"],
             }
         )
         documents.append(doc)
@@ -56,9 +55,9 @@ def main():
     print("Converting to LangChain Documents...")
     documents = chunks_to_documents(chunks)
 
-    print("Initializing embedding model (text-embedding-3-small)...")
+    print("Initializing embedding model (text-embedding-3-large)...")
     embeddings = OpenAIEmbeddings(
-        model="text-embedding-3-small",
+        model="text-embedding-3-large",
         api_key=OPENAI_API_KEY,
     )
 
@@ -74,7 +73,7 @@ def main():
     print(f"Indexing {total_docs} documents in batches of {BATCH_SIZE}...")
 
     for i in tqdm(range(0, total_docs, BATCH_SIZE), desc="Indexing"):
-        batch = documents[i : i + BATCH_SIZE]
+        batch = documents[i:i + BATCH_SIZE]
         try:
             vectorstore.add_documents(batch)
         except Exception as e:

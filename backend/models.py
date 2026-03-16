@@ -9,6 +9,9 @@ class ChatMessage(BaseModel):
     content: str
 
 
+ALLOWED_MODELS = ("gpt-4.1-mini", "gpt-5-mini")
+
+
 class QuestionRequest(BaseModel):
     message: str = Field(
         min_length=1,
@@ -19,6 +22,10 @@ class QuestionRequest(BaseModel):
         default_factory=list,
         max_length=MAX_HISTORY_LENGTH,
         description="Conversation history (last 20 messages accepted, last 10 used for context)"
+    )
+    model: Optional[Literal["gpt-4.1-mini", "gpt-5-mini"]] = Field(
+        default=None,
+        description="LLM model to use (default: server config)"
     )
 
     @field_validator('message')

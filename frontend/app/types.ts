@@ -1,3 +1,5 @@
+export type ModelOption = "gpt-4.1-mini" | "gpt-5-mini";
+
 export type Message = {
   id: string;
   role: "user" | "ai";
@@ -8,8 +10,8 @@ export type Message = {
 };
 
 export const SUGGESTED_QUESTIONS = [
-  "Comment les index améliorent-ils les performances ?",
-  "Qu'est-ce que le MVCC dans PostgreSQL ?",
-  "Comment écrire des CTE efficaces ?",
-  "Différences entre INNER et LEFT JOIN ?",
+  "How do indexes improve query performance?",
+  "What is MVCC in PostgreSQL?",
+  "How do I write efficient CTEs?",
+  "What is the difference between INNER and LEFT JOIN?",
 ] as const;

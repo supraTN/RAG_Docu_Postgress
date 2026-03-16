@@ -1,7 +1,122 @@
 [
   {
-    "question": "How can I search for rows containing a specific word in a table without using an index?",
-    "expected_answer": "You can perform a full text search without an index by using a query like: SELECT title FROM pgweb WHERE to_tsvector('english', body) @@ to_tsquery('english', 'friend'); which finds rows where the body contains the word 'friend' or related words.",
+    "question": "If I create a table without naming a schema, where does it go?",
+    "expected_answer": "It is placed into the schema named public by default; every new database contains a public schema. Thus CREATE TABLE products (...) is equivalent to CREATE TABLE public.products (...).",
+    "source_chunk_id": "ddl-schemas.html_3",
+    "acceptable_chunk_ids": [
+      "ddl-schemas.html_2",
+      "ddl-schemas.html_3",
+      "ddl-schemas.html_4"
+    ],
+    "source_chunk_content": "### 5.9.2. The Public Schema \n\nIn the previous sections we created tables without specifying any\nschema names. By default such tables (and other objects) are\nautomatically put into a schema named “public”. Every new\ndatabase contains such a schema. Thus, the following are equivalent:\n\n```sql\nCREATE TABLE products ( ... );\n```\n\nand:\n\n```sql\nCREATE TABLE public.products ( ... );\n```",
+    "source_file": "ddl-schemas.html",
+    "source_title": "5.9. Schemas",
+    "source_url": "https://www.postgresql.org/docs/16/ddl-schemas.html",
+    "token_count": 88,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that unnamed-schema objects are put into the schema named 'public' by default and shows the equivalent CREATE TABLE examples."
+  },
+  {
+    "question": "I get an error mentioning semget or shmget when starting PostgreSQL — what does that mean and what can I do about it?",
+    "expected_answer": "That error likely means your kernel doesn’t have enough shared memory or semaphores configured for PostgreSQL. You can either reconfigure the kernel resources as described in the docs, or temporarily reduce PostgreSQL’s shared memory and semaphore needs by lowering shared_buffers and/or max_connections.",
+    "source_chunk_id": "app-postgres.html_9",
+    "acceptable_chunk_ids": [
+      "app-postgres.html_8",
+      "app-postgres.html_9",
+      "app-postgres.html_10"
+    ],
+    "source_chunk_content": "`PGCLIENTENCODING`\n: Default character encoding used by clients. (The clients can\n override this individually.) This value can also be set in the\n configuration file.\n\n`PGDATA`\n: Default data directory location\n\n`PGDATESTYLE`\n: Default value of the [DateStyle](runtime-config-client.html#GUC-DATESTYLE) run-time\n parameter. (The use of this environment variable is deprecated.)\n\n`PGPORT`\n: Default port number (preferably set in the configuration file)\n\n## Diagnostics\n\nA failure message mentioning `semget` or\n`shmget` probably indicates you need to configure your\nkernel to provide adequate shared memory and semaphores. For more\ndiscussion see [Section 19.4](kernel-resources.html \"19.4. Managing Kernel Resources\"). You might be able\nto postpone reconfiguring your kernel by decreasing [shared\\_buffers](runtime-config-resource.html#GUC-SHARED-BUFFERS) to reduce the shared memory\nconsumption of PostgreSQL, and/or by reducing\n[max\\_connections](runtime-config-connection.html#GUC-MAX-CONNECTIONS) to reduce the semaphore\nconsumption.\n\nA failure message suggesting that another server is already running\nshould be checked carefully, for example by using the command\n\n```sql\n$ ps ax | grep postgres\n```\n\nor\n\n```sql\n$ ps -ef | grep postgres\n```\n\ndepending on your system. If you are certain that no conflicting\nserver is running, you can remove the lock file mentioned in the\nmessage and try again.\n\nA failure message indicating inability to bind to a port might\nindicate that that port is already in use by some\nnon-PostgreSQL process. You might also\nget this error if you terminate `postgres`\nand immediately restart it using the same port; in this case, you\nmust simply wait a few seconds until the operating system closes\nthe port before trying again. Finally, you might get this error if\nyou specify a port number that your operating system considers to\nbe reserved. For example, many versions of Unix consider port\nnumbers under 1024 to be “trusted” and only permit\nthe Unix superuser to access them.",
+    "source_file": "app-postgres.html",
+    "source_title": "postgres",
+    "source_url": "https://www.postgresql.org/docs/16/app-postgres.html",
+    "token_count": 455,
+    "_valid": true,
+    "_validation_reason": "The excerpt explains that semget/shmget errors indicate insufficient kernel shared memory/semaphores and advises reconfiguring kernel resources or temporarily reducing shared_buffers and/or max_connections."
+  },
+  {
+    "question": "How do I initialize a PostgreSQL cluster to use ICU locales?",
+    "expected_answer": "Run initdb with the locale-provider option and an ICU locale, for example: initdb --locale-provider=icu --icu-locale=en. This requires PostgreSQL to have been built with ICU support.",
+    "source_chunk_id": "locale.html_7",
+    "acceptable_chunk_ids": [
+      "locale.html_6",
+      "locale.html_7",
+      "locale.html_8"
+    ],
+    "source_chunk_content": "### 24.1.4. Locale Providers \n\nPostgreSQL supports multiple *locale\nproviders*. This specifies which library supplies the locale\ndata. One standard provider name is `libc`, which uses\nthe locales provided by the operating system C library. These are the\nlocales used by most tools provided by the operating system. Another\nprovider is `icu`, which uses the external\nICU library. ICU locales can\nonly be used if support for ICU was configured when PostgreSQL was built.\n\nThe commands and tools that select the locale settings, as described\nabove, each have an option to select the locale provider. The examples\nshown earlier all use the `libc` provider, which is the\ndefault. Here is an example to initialize a database cluster using the\nICU provider:\n\n```sql\ninitdb --locale-provider=icu --icu-locale=en\n```\n\nSee the description of the respective commands and programs for\ndetails. Note that you can mix locale providers at different\ngranularities, for example use `libc` by default for the\ncluster but have one database that uses the `icu`\nprovider, and then have collation objects using either provider within\nthose databases.\n\nWhich locale provider to use depends on individual requirements. For most\nbasic uses, either provider will give adequate results. For the libc\nprovider, it depends on what the operating system offers; some operating\nsystems are better than others. For advanced uses, ICU offers more locale\nvariants and customization options.",
+    "source_file": "locale.html",
+    "source_title": "24.1. Locale Support",
+    "source_url": "https://www.postgresql.org/docs/16/locale.html",
+    "token_count": 309,
+    "_valid": true,
+    "_validation_reason": "The excerpt includes the exact initdb example using --locale-provider=icu --icu-locale=en and notes that ICU support must have been enabled when PostgreSQL was built, so the answer is fully supported by the text."
+  },
+  {
+    "question": "how can i turn on JIT compilation for queries?",
+    "expected_answer": "Enable the configuration variable \"jit\". When jit is enabled, the settings jit_above_cost, jit_inline_above_cost and jit_optimize_above_cost determine whether JIT is performed for a query and how much effort is spent, and jit_provider selects which JIT implementation is used (rarely needs changing).",
+    "source_chunk_id": "jit-configuration.html_0",
+    "acceptable_chunk_ids": [
+      "jit-configuration.html_0"
+    ],
+    "source_chunk_content": "## 32.3. Configuration \n\nThe configuration variable\n[jit](runtime-config-query.html#GUC-JIT) determines whether JIT\ncompilation is enabled or disabled.\nIf it is enabled, the configuration variables\n[jit\\_above\\_cost](runtime-config-query.html#GUC-JIT-ABOVE-COST), [jit\\_inline\\_above\\_cost](runtime-config-query.html#GUC-JIT-INLINE-ABOVE-COST), and [jit\\_optimize\\_above\\_cost](runtime-config-query.html#GUC-JIT-OPTIMIZE-ABOVE-COST) determine\nwhether JIT compilation is performed for a query,\nand how much effort is spent doing so.\n\n[jit\\_provider](runtime-config-client.html#GUC-JIT-PROVIDER) determines which JIT\nimplementation is used. It is rarely required to be changed. See [Section 32.4.2](jit-extensibility.html#JIT-PLUGGABLE \"32.4.2. Pluggable JIT Providers\").\n\nFor development and debugging purposes a few additional configuration\nparameters exist, as described in\n[Section 20.17](runtime-config-developer.html \"20.17. Developer Options\").",
+    "source_file": "jit-configuration.html",
+    "source_title": "32.3. Configuration",
+    "source_url": "https://www.postgresql.org/docs/16/jit-configuration.html",
+    "token_count": 252,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that the configuration variable 'jit' determines whether JIT is enabled or disabled and describes related settings, so enabling 'jit' fully answers the question."
+  },
+  {
+    "question": "How can I create a partial index that excludes the 192.168.100.0–192.168.100.255 range for the client_ip column?",
+    "expected_answer": "Create an index with a WHERE clause that omits that range, for example: CREATE INDEX access_log_client_ip_ix ON access_log (client_ip) WHERE NOT (client_ip > inet '192.168.100.0' AND client_ip < inet '192.168.100.255'); This index will be used for queries whose client_ip falls outside that excluded subnet.",
+    "source_chunk_id": "indexes-partial.html_1",
+    "acceptable_chunk_ids": [
+      "indexes-partial.html_0",
+      "indexes-partial.html_1",
+      "indexes-partial.html_2"
+    ],
+    "source_chunk_content": "Assume a table like this:\n\n```sql\nCREATE TABLE access_log (\n url varchar,\n client_ip inet,\n ...\n);\n```\n\nTo create a partial index that suits our example, use a command\nsuch as this:\n\n```sql\nCREATE INDEX access_log_client_ip_ix ON access_log (client_ip)\nWHERE NOT (client_ip > inet '192.168.100.0' AND\n client_ip < inet '192.168.100.255');\n```\n\nA typical query that can use this index would be:\n\n```sql\nSELECT *\nFROM access_log\nWHERE url = '/index.html' AND client_ip = inet '212.78.10.32';\n```\n\nHere the query's IP address is covered by the partial index. The\nfollowing query cannot use the partial index, as it uses an IP address\nthat is excluded from the index:\n\n```sql\nSELECT *\nFROM access_log\nWHERE url = '/index.html' AND client_ip = inet '192.168.100.23';\n```\n\nObserve that this kind of partial index requires that the common\nvalues be predetermined, so such partial indexes are best used for\ndata distributions that do not change. Such indexes can be recreated\noccasionally to adjust for new data distributions, but this adds\nmaintenance effort.\n\n\\\n\nAnother possible use for a partial index is to exclude values from the\nindex that the\ntypical query workload is not interested in; this is shown in [Example 11.2](indexes-partial.html#INDEXES-PARTIAL-EX2 \"Example 11.2. Setting up a Partial Index to Exclude Uninteresting Values\"). This results in the same\nadvantages as listed above, but it prevents the\n“uninteresting” values from being accessed via that\nindex, even if an index scan might be profitable in that\ncase. Obviously, setting up partial indexes for this kind of\nscenario will require a lot of care and experimentation.\n\n**Example 11.2. Setting up a Partial Index to Exclude Uninteresting Values**\n\nIf you have a table that contains both billed and unbilled orders,\nwhere the unbilled orders take up a small fraction of the total\ntable and yet those are the most-accessed rows, you can improve\nperformance by creating an index on just the unbilled rows. The\ncommand to create the index would look like this:\n\n```sql\nCREATE INDEX orders_unbilled_index ON orders (order_nr)\n WHERE billed is not true;\n```\n\nA possible query to use this index would be:\n\n```sql\nCREATE INDEX orders_unbilled_index ON orders (order_nr)\n WHERE billed is not true;\n```\n\nA possible query to use this index would be:\n\n```sql\nSELECT * FROM orders WHERE billed is not true AND order_nr < 10000;\n```\n\nHowever, the index can also be used in queries that do not involve\n`order_nr` at all, e.g.:\n\n```sql\nSELECT * FROM orders WHERE billed is not true AND amount > 5000.00;\n```\n\nThis is not as efficient as a partial index on the\n`amount` column would be, since the system has to\nscan the entire index. Yet, if there are relatively few unbilled\norders, using this partial index just to find the unbilled orders\ncould be a win.\n\nNote that this query cannot use this index:\n\n```sql\nSELECT * FROM orders WHERE order_nr = 3501;\n```\n\nThe order 3501 might be among the billed or unbilled\norders.\n\n\\",
+    "source_file": "indexes-partial.html",
+    "source_title": "11.8. Partial Indexes",
+    "source_url": "https://www.postgresql.org/docs/16/indexes-partial.html",
+    "token_count": 724,
+    "_valid": true,
+    "_validation_reason": "The excerpt provides the exact SQL statement and explanation for creating an index that excludes the 192.168.100.0–192.168.100.255 range, so the question can be answered fully from it."
+  },
+  {
+    "question": "Can I use PostgreSQL's ECPG with C++ code?",
+    "expected_answer": "Yes. ECPG was originally written to work with C but it also works with C++, although it does not recognize all C++ constructs yet.",
+    "source_chunk_id": "ecpg.html_0",
+    "acceptable_chunk_ids": [
+      "ecpg.html_0"
+    ],
+    "source_chunk_content": "## Chapter 36. ECPG — Embedded SQL in C\n\nThis chapter describes the embedded SQL package\nfor PostgreSQL. It was written by\nLinus Tolke (`<linus@epact.se>`) and Michael Meskes\n(`<meskes@postgresql.org>`). Originally it was written to work with\nC. It also works with C++, but\nit does not recognize all C++ constructs yet.\n\nThis documentation is quite incomplete. But since this\ninterface is standardized, additional information can be found in\nmany resources about SQL.",
+    "source_file": "ecpg.html",
+    "source_title": "Chapter 36. ECPG — Embedded SQL in C",
+    "source_url": "https://www.postgresql.org/docs/16/ecpg.html",
+    "token_count": 112,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states ECPG works with C++ though it does not recognize all C++ constructs, so the question can be fully answered from it."
+  },
+  {
+    "question": "How can I change a column to a different data type, and what if the existing values can't be implicitly converted?",
+    "expected_answer": "Use ALTER TABLE table_name ALTER COLUMN column_name TYPE new_type; if existing entries can't be converted implicitly, include a USING clause to define how to compute the new values. Note that PostgreSQL will try to convert defaults and constraints too, which may fail or be surprising, so you may want to drop and then recreate constraints around the change.",
+    "source_chunk_id": "ddl-alter.html_7",
+    "acceptable_chunk_ids": [
+      "ddl-alter.html_6",
+      "ddl-alter.html_7",
+      "ddl-alter.html_8"
+    ],
+    "source_chunk_content": "### 5.6.6. Changing a Column's Data Type \n\nTo convert a column to a different data type, use a command like:\n\n```sql\nALTER TABLE products ALTER COLUMN price TYPE numeric(10,2);\n```\n\nThis will succeed only if each existing entry in the column can be\nconverted to the new type by an implicit cast. If a more complex\nconversion is needed, you can add a `USING` clause that\nspecifies how to compute the new values from the old.\n\nPostgreSQL will attempt to convert the column's\ndefault value (if any) to the new type, as well as any constraints\nthat involve the column. But these conversions might fail, or might\nproduce surprising results. It's often best to drop any constraints\non the column before altering its type, and then add back suitably\nmodified constraints afterwards.",
+    "source_file": "ddl-alter.html",
+    "source_title": "5.6. Modifying Tables",
+    "source_url": "https://www.postgresql.org/docs/16/ddl-alter.html",
+    "token_count": 178,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly shows the ALTER TABLE ... ALTER COLUMN ... TYPE syntax, explains implicit-cast requirement and the USING clause for complex conversions, and warns about defaults and constraints, matching the answer."
+  },
+  {
+    "question": "How can I search a table for rows containing the word \"friend\" without specifying a text search configuration?",
+    "expected_answer": "Use to_tsvector on the column and to_tsquery with the word, omitting configuration, for example: SELECT title FROM pgweb WHERE to_tsvector(body) @@ to_tsquery('friend'); this will use the default_text_search_config.",
     "source_chunk_id": "textsearch-tables.html_1",
     "acceptable_chunk_ids": [
       "textsearch-tables.html_0",
@@ -14,659 +129,533 @@
     "source_url": "https://www.postgresql.org/docs/16/textsearch-tables.html",
     "token_count": 352,
     "_valid": true,
-    "_validation_reason": "The excerpt explicitly shows how to perform a full text search without an index using the given query example and explains its functionality fully."
+    "_validation_reason": "The excerpt includes the exact example query omitting the configuration (SELECT title FROM pgweb WHERE to_tsvector(body) @@ to_tsquery('friend');) and notes it will use default_text_search_config, so no outside information is needed."
   },
   {
-    "question": "How can I update a JSONB field at a specific array index that doesn't exist yet?",
-    "expected_answer": "If you update a jsonb array at an index beyond its current length, PostgreSQL will automatically append null elements up to that index before setting your value. For example, updating jsonb_field[2] = '2' will add nulls at positions 0 and 1 if they don't exist.",
-    "source_chunk_id": "datatype-json.html_17",
+    "question": "How do I enlarge a cube by a radius r in at least n dimensions?",
+    "expected_answer": "Use the function cube_enlarge(cube, r, n). It decreases lower-left coordinates by r and increases upper-right coordinates by r (shrinking if r is negative), sets a coordinate pair to their average if a lower-left would exceed its upper-right when r<0, and if n is larger than the current number of dimensions and r>0 it adds extra dimensions initialized to 0.",
+    "source_chunk_id": "cube.html_8",
     "acceptable_chunk_ids": [
-      "datatype-json.html_16",
-      "datatype-json.html_17",
-      "datatype-json.html_18"
+      "cube.html_7",
+      "cube.html_8",
+      "cube.html_9"
     ],
-    "source_chunk_content": "```sql\n-- Where jsonb_field was NULL, it is now {\"a\": 1}\nUPDATE table_name SET jsonb_field['a'] = '1';\n\n-- Where jsonb_field was NULL, it is now [1]\nUPDATE table_name SET jsonb_field[0] = '1';\n```\n\nIf an index is specified for an array containing too few elements,\n`NULL` elements will be appended until the index is reachable\nand the value can be set.\n\n```sql\n-- Where jsonb_field was [], it is now [null, null, 2];\n-- where jsonb_field was [0], it is now [0, null, 2]\nUPDATE table_name SET jsonb_field[2] = '2';\n```\n\nA `jsonb` value will accept assignments to nonexistent subscript\npaths as long as the last existing element to be traversed is an object or\narray, as implied by the corresponding subscript (the element indicated by\nthe last subscript in the path is not traversed and may be anything). Nested\narray and object structures will be created, and in the former case\n`null`-padded, as specified by the subscript path until the\nassigned value can be placed.\n\n```sql\n-- Where jsonb_field was {}, it is now {\"a\": [{\"b\": 1}]}\nUPDATE table_name SET jsonb_field['a'][0]['b'] = '1';\n\n-- Where jsonb_field was [], it is now [null, {\"a\": 1}]\nUPDATE table_name SET jsonb_field[1]['a'] = '1';\n```",
+    "source_chunk_content": "| `cube_inter` ( `cube`, `cube` ) → `cube` Produces the intersection of two cubes. `cube_inter('(1,2)', '(3,4)')` → `(3, 4),(1, 2)` |\n| `cube_enlarge` ( *`c`* `cube`, *`r`* `double`, *`n`* `integer` ) → `cube` Increases the size of the cube by the specified radius *`r`* in at least *`n`* dimensions. If the radius is negative the cube is shrunk instead. All defined dimensions are changed by the radius *`r`*. Lower-left coordinates are decreased by *`r`* and upper-right coordinates are increased by *`r`*. If a lower-left coordinate is increased to more than the corresponding upper-right coordinate (this can only happen when *`r`* < 0) than both coordinates are set to their average. If *`n`* is greater than the number of defined dimensions and the cube is being enlarged (*`r`* > 0), then extra dimensions are added to make *`n`* altogether; 0 is used as the initial value for the extra coordinates. This function is useful for creating bounding boxes around a point for searching for nearby points. `cube_enlarge('(1,2),(3,4)', 0.5, 3)` → `(0.5, 1.5, -0.5),(3.5, 4.5, 0.5)` |\n\n\\",
+    "source_file": "cube.html",
+    "source_title": "F.11. cube — a multi-dimensional cube data type",
+    "source_url": "https://www.postgresql.org/docs/16/cube.html",
+    "token_count": 327,
+    "_valid": true,
+    "_validation_reason": "The excerpt fully describes cube_enlarge's signature and behavior (how it adjusts coordinates for given r and n, handles negative r and added dimensions), so the question can be answered solely from it."
+  },
+  {
+    "question": "How do I run a statement that I prepared with SPI_prepare from C code?",
+    "expected_answer": "Call SPI_execute_plan with the prepared SPIPlanPtr and parameter arrays, e.g. SPI_execute_plan(plan, values, nulls, read_only, count). The read_only and count arguments behave the same as in SPI_execute.",
+    "source_chunk_id": "spi-spi-execute-plan.html_0",
+    "acceptable_chunk_ids": [
+      "spi-spi-execute-plan.html_0",
+      "spi-spi-execute-plan.html_1"
+    ],
+    "source_chunk_content": "## SPI\\_execute\\_plan\n\nSPI\\_execute\\_plan — execute a statement prepared by `SPI_prepare`\n\n## Synopsis\n\n```sql\nint SPI_execute_plan(SPIPlanPtr plan, Datum * values, const char * nulls,\n bool read_only, long count)\n```\n\n## Description\n\n`SPI_execute_plan` executes a statement prepared by\n`SPI_prepare` or one of its siblings.\n*`read_only`* and\n*`count`* have the same interpretation as in\n`SPI_execute`.\n\n## Arguments",
+    "source_file": "spi-spi-execute-plan.html",
+    "source_title": "SPI_execute_plan",
+    "source_url": "https://www.postgresql.org/docs/16/spi-spi-execute-plan.html",
+    "token_count": 107,
+    "_valid": true,
+    "_validation_reason": "The excerpt documents SPI_execute_plan, its signature, and that it executes a statement prepared by SPI_prepare (including how to pass values, nulls, read_only, and count), which is sufficient to answer the question."
+  },
+  {
+    "question": "How does \\ir (\\include_relative) behave differently from \\i when running a script?",
+    "expected_answer": "In interactive mode \\ir and \\i behave the same. When run from a script, \\ir resolves filenames relative to the directory containing the script, whereas \\i resolves them relative to the current working directory.",
+    "source_chunk_id": "app-psql.html_52",
+    "acceptable_chunk_ids": [
+      "app-psql.html_51",
+      "app-psql.html_52",
+      "app-psql.html_53"
+    ],
+    "source_chunk_content": "Expressions that do not properly evaluate to true or false will\n generate a warning and be treated as false.\n\n Lines being skipped are parsed normally to identify queries and\n backslash commands, but queries are not sent to the server, and\n backslash commands other than conditionals\n (`\\if`, `\\elif`,\n `\\else`, `\\endif`) are\n ignored. Conditional commands are checked only for valid nesting.\n Variable references in skipped lines are not expanded, and backquote\n expansion is not performed either.\n\n All the backslash commands of a given conditional block must appear in\n the same source file. If EOF is reached on the main input file or an\n `\\include`-ed file before all local\n `\\if`-blocks have been closed,\n then psql will raise an error.\n\n Here is an example:\n\n \n```sql\n-- check for the existence of two separate records in the database and store\n-- the results in separate psql variables\nSELECT\n EXISTS(SELECT 1 FROM customer WHERE customer_id = 123) as is_customer,\n EXISTS(SELECT 1 FROM employee WHERE employee_id = 456) as is_employee\n\\gset\n\\if :is_customer\n SELECT * FROM customer WHERE customer_id = 123;\n\\elif :is_employee\n \\echo 'is not a customer but is an employee'\n SELECT * FROM employee WHERE employee_id = 456;\n\\else\n \\if yes\n \\echo 'not a customer or employee'\n \\else\n \\echo 'this will never print'\n \\endif\n\\endif\n```\n\n`\\ir` or `\\include_relative` *`filename`* \n: The `\\ir` command is similar to `\\i`, but resolves\n relative file names differently. When executing in interactive mode,\n the two commands behave identically. However, when invoked from a\n script, `\\ir` interprets file names relative to the\n directory in which the script is located, rather than the current\n working directory.",
+    "source_file": "app-psql.html",
+    "source_title": "psql",
+    "source_url": "https://www.postgresql.org/docs/16/app-psql.html",
+    "token_count": 395,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that in interactive mode they behave identically, but when invoked from a script \\ir resolves filenames relative to the script's directory while \\i uses the current working directory."
+  },
+  {
+    "question": "How can I list all schemas including system schemas and show their permissions and descriptions?",
+    "expected_answer": "Use the \\\\dn command with both the S modifier and + appended, e.g. `\\\\dnS+ [pattern]`. The S modifier includes system objects and the + makes psql show each object's permissions and description.",
+    "source_chunk_id": "app-psql.html_36",
+    "acceptable_chunk_ids": [
+      "app-psql.html_35",
+      "app-psql.html_36",
+      "app-psql.html_37"
+    ],
+    "source_chunk_content": "`\\dn[S+] [ pattern ]` \n: Lists schemas (namespaces). If *`pattern`*\n is specified, only schemas whose names match the pattern are listed.\n By default, only user-created objects are shown; supply a\n pattern or the `S` modifier to include system objects.\n If `+` is appended to the command name, each object\n is listed with its associated permissions and description, if any.\n\n`\\do[S+] [ pattern [ arg_pattern [ arg_pattern ] ] ]` \n: Lists operators with their operand and result types.\n If *`pattern`* is\n specified, only operators whose names match the pattern are listed.\n If one *`arg_pattern`* is\n specified, only prefix operators whose right argument's type name\n matches that pattern are listed.\n If two *`arg_pattern`*s\n are specified, only binary operators whose argument type names match\n those patterns are listed. (Alternatively, write `-`\n for the unused argument of a unary operator.)\n By default, only user-created objects are shown; supply a\n pattern or the `S` modifier to include system\n objects.\n If `+` is appended to the command name,\n additional information about each operator is shown, currently just\n the name of the underlying function.",
+    "source_file": "app-psql.html",
+    "source_title": "psql",
+    "source_url": "https://www.postgresql.org/docs/16/app-psql.html",
+    "token_count": 258,
+    "_valid": true,
+    "_validation_reason": "validation_parse_error"
+  },
+  {
+    "question": "When should I choose jsonb instead of json for storing JSON data in PostgreSQL?",
+    "expected_answer": "Choose jsonb when you need faster processing and the ability to index JSON data: jsonb is stored in a decomposed binary format which is slightly slower to input but much faster to process and supports indexing. Use json if you need to preserve the exact input text and don't mind reparsing on each use.",
+    "source_chunk_id": "datatype-json.html_0",
+    "acceptable_chunk_ids": [
+      "datatype-json.html_0",
+      "datatype-json.html_1"
+    ],
+    "source_chunk_content": "## 8.14. JSON Types \n\nJSON data types are for storing JSON (JavaScript Object Notation)\ndata, as specified in [RFC\n7159](https://datatracker.ietf.org/doc/html/rfc7159). Such data can also be stored as `text`, but\nthe JSON data types have the advantage of enforcing that each\nstored value is valid according to the JSON rules. There are also\nassorted JSON-specific functions and operators available for data stored\nin these data types; see [Section 9.16](functions-json.html \"9.16. JSON Functions and Operators\").\n\nPostgreSQL offers two types for storing JSON\ndata: `json` and `jsonb`. To implement efficient query\nmechanisms for these data types, PostgreSQL\nalso provides the `jsonpath` data type described in\n[Section 8.14.7](datatype-json.html#DATATYPE-JSONPATH \"8.14.7. jsonpath Type\").\n\nThe `json` and `jsonb` data types\naccept *almost* identical sets of values as\ninput. The major practical difference is one of efficiency. The\n`json` data type stores an exact copy of the input text,\nwhich processing functions must reparse on each execution; while\n`jsonb` data is stored in a decomposed binary format that\nmakes it slightly slower to input due to added conversion\noverhead, but significantly faster to process, since no reparsing\nis needed. `jsonb` also supports indexing, which can be a\nsignificant advantage.",
     "source_file": "datatype-json.html",
     "source_title": "8.14. JSON Types",
     "source_url": "https://www.postgresql.org/docs/16/datatype-json.html",
-    "token_count": 328,
+    "token_count": 321,
     "_valid": true,
-    "_validation_reason": "The excerpt explicitly explains that updating a jsonb array at an out-of-range index will append null elements up to that index before setting the value, exemplified by the given code and explanation."
+    "_validation_reason": "The excerpt explicitly states jsonb is stored in a decomposed binary format that is slower to input but faster to process and supports indexing, while json preserves exact input text and requires reparsing, which fully answers the question."
   },
   {
-    "question": "How can I restore a custom-format dump file into a new empty database called newdb?",
-    "expected_answer": "First, create the new database from template0 using the command `createdb -T template0 newdb`. Then restore the dump into newdb with `pg_restore -d newdb db.dump`, without using the `-C` option, to connect directly to the new database.",
-    "source_chunk_id": "app-pgrestore.html_19",
+    "question": "What does it mean when an index scan is marked lossy or requires rechecks?",
+    "expected_answer": "It means the index access method may return extra entries in addition to those that pass the scan keys, so the core index-scan machinery will reapply the index conditions to the actual heap tuples to verify whether they should be selected. If the recheck option is not specified, the index scan must instead return exactly the matching entries.",
+    "source_chunk_id": "index-scanning.html_0",
     "acceptable_chunk_ids": [
-      "app-pgrestore.html_18",
-      "app-pgrestore.html_19"
+      "index-scanning.html_0",
+      "index-scanning.html_1"
     ],
-    "source_chunk_content": "## Examples\n\nAssume we have dumped a database called `mydb` into a\ncustom-format dump file:\n\n```sql\n$ pg_dump -Fc mydb > db.dump\n```\n\nTo drop the database and recreate it from the dump:\n\n```sql\n$ dropdb mydb\n$ pg_restore -C -d postgres db.dump\n```\n\nThe database named in the `-d` switch can be any database existing\nin the cluster; pg\\_restore only uses it to issue the\n`CREATE DATABASE` command for `mydb`. With\n`-C`, data is always restored into the database name that appears\nin the dump file.\n\nTo restore the dump into a new database called `newdb`:\n\n```sql\n$ createdb -T template0 newdb\n$ pg_restore -d newdb db.dump\n```\n\nNotice we don't use `-C`, and instead connect directly to the\ndatabase to be restored into. Also note that we clone the new database\nfrom `template0` not `template1`, to ensure it is\ninitially empty.\n\nTo reorder database items, it is first necessary to dump the table of\ncontents of the archive:\n\n```sql\n$ pg_restore -l db.dump > db.list\n```\n\nThe listing file consists of a header and one line for each item, e.g.:\n\n```sql\n;\n; Archive created at Mon Sep 14 13:55:39 2009\n;     dbname: DBDEMOS\n;     TOC Entries: 81\n;     Compression: 9\n;     Dump Version: 1.10-0\n;     Format: CUSTOM\n;     Integer: 4 bytes\n;     Offset: 8 bytes\n;     Dumped from database version: 8.3.5\n;     Dumped by pg_dump version: 8.3.8\n;\n;\n; Selected TOC Entries:\n;\n3; 2615 2200 SCHEMA - public pasha\n1861; 0 0 COMMENT - SCHEMA public pasha\n1862; 0 0 ACL - public pasha\n317; 1247 17715 TYPE public composite pasha\n319; 1247 25899 DOMAIN public domain0 pasha\n```\n\nSemicolons start a comment, and the numbers at the start of lines refer to the\ninternal archive ID assigned to each item.\n\nLines in the file can be commented out, deleted, and reordered. For example:\n\n```sql\n10; 145433 TABLE map_resolutions postgres\n;2; 145344 TABLE species postgres\n;4; 145359 TABLE nt_header postgres\n6; 145402 TABLE species_records postgres\n;8; 145416 TABLE ss_old postgres\n```\n\ncould be used as input to pg\\_restore and would only restore\nitems 10 and 6, in that order:\n\n```sql\n$ pg_restore -L db.list db.dump\n```\n\n## See Also\n\n[pg\\_dump](app-pgdump.html \"pg_dump\"), [pg\\_dumpall](app-pg-dumpall.html \"pg_dumpall\"), [psql](app-psql.html \"psql\")",
-    "source_file": "app-pgrestore.html",
-    "source_title": "pg_restore",
-    "source_url": "https://www.postgresql.org/docs/16/app-pgrestore.html",
-    "token_count": 660,
+    "source_chunk_content": "## 64.3. Index Scanning \n\nIn an index scan, the index access method is responsible for regurgitating\nthe TIDs of all the tuples it has been told about that match the\n*scan keys*. The access method is *not* involved in\nactually fetching those tuples from the index's parent table, nor in\ndetermining whether they pass the scan's visibility test or other\nconditions.\n\nA scan key is the internal representation of a `WHERE` clause of\nthe form *`index_key`* *`operator`*\n*`constant`*, where the index key is one of the columns of the\nindex and the operator is one of the members of the operator family\nassociated with that index column. An index scan has zero or more scan\nkeys, which are implicitly ANDed — the returned tuples are expected\nto satisfy all the indicated conditions.\n\nThe access method can report that the index is *lossy*, or\nrequires rechecks, for a particular query. This implies that the index\nscan will return all the entries that pass the scan key, plus possibly\nadditional entries that do not. The core system's index-scan machinery\nwill then apply the index conditions again to the heap tuple to verify\nwhether or not it really should be selected. If the recheck option is not\nspecified, the index scan must return exactly the set of matching entries.",
+    "source_file": "index-scanning.html",
+    "source_title": "64.3. Index Scanning",
+    "source_url": "https://www.postgresql.org/docs/16/index-scanning.html",
+    "token_count": 287,
     "_valid": true,
-    "_validation_reason": "The excerpt includes explicit instructions on creating a newdb database from template0 and restoring the dump file into it using pg_restore without the -C option."
+    "_validation_reason": "The excerpt explicitly explains that a lossy/recheck index scan may return extra entries and that the core system will reapply index conditions to heap tuples (and that without recheck the scan must return exact matches)."
   },
   {
-    "question": "how do i enable multiple languages for postgres messages during build?",
-    "expected_answer": "Use the --enable-nls option followed by a space-separated list of language codes you want supported, for example --enable-nls='de fr'. If you omit the list, all available translations will be installed.",
-    "source_chunk_id": "install-make.html_12",
+    "question": "How do I obtain and unpack the source for a released PostgreSQL version?",
+    "expected_answer": "Go to https://www.postgresql.org/ftp/source/ and download the postgresql-version.tar.gz or .tar.bz2 file for the release you want. Unpack it (for example: tar xf postgresql-version.tar.bz2), which creates a postgresql-version directory; then change into that directory to continue installation. Alternatively, you can use Git (see Section I.1).",
+    "source_chunk_id": "install-getsource.html_0",
     "acceptable_chunk_ids": [
-      "install-make.html_11",
-      "install-make.html_12",
-      "install-make.html_13"
+      "install-getsource.html_0"
     ],
-    "source_chunk_content": "`--enable-nls[=LANGUAGES]` \n:   Enables Native Language Support (NLS),\n    that is, the ability to display a program's messages in a\n    language other than English.\n    *`LANGUAGES`* is an optional space-separated\n    list of codes of the languages that you want supported, for\n    example `--enable-nls='de fr'`. (The intersection\n    between your list and the set of actually provided\n    translations will be computed automatically.) If you do not\n    specify a list, then all available translations are\n    installed.\n\n    To use this option, you will need an implementation of the\n    Gettext API.\n\n`--with-perl` \n:   Build the PL/Perl server-side language.\n\n`--with-python` \n:   Build the PL/Python server-side language.\n\n`--with-tcl` \n:   Build the PL/Tcl server-side language.\n\n`--with-tclconfig=DIRECTORY` \n:   Tcl installs the file `tclConfig.sh`, which\n    contains configuration information needed to build modules\n    interfacing to Tcl. This file is normally found automatically\n    at a well-known location, but if you want to use a different\n    version of Tcl you can specify the directory in which to look\n    for `tclConfig.sh`.",
-    "source_file": "install-make.html",
-    "source_title": "17.3. Building and Installation with Autoconf and Make",
-    "source_url": "https://www.postgresql.org/docs/16/install-make.html",
-    "token_count": 282,
+    "source_chunk_content": "## 17.2. Getting the Source \n\nThe PostgreSQL source code for released versions\ncan be obtained from the download section of our website:\n<https://www.postgresql.org/ftp/source/>.\nDownload the\n`postgresql-version.tar.gz`\nor `postgresql-version.tar.bz2`\nfile you're interested in, then unpack it:\n\n```sql\ntar xf postgresql-version.tar.bz2\n```\n\nThis will create a directory\n`postgresql-version` under\nthe current directory with the PostgreSQL sources.\nChange into that directory for the rest of the installation procedure.\n\nAlternatively, you can use the Git version control system; see\n[Section I.1](git.html \"I.1. Getting the Source via Git\") for more information.",
+    "source_file": "install-getsource.html",
+    "source_title": "17.2. Getting the Source",
+    "source_url": "https://www.postgresql.org/docs/16/install-getsource.html",
+    "token_count": 152,
     "_valid": true,
-    "_validation_reason": "The excerpt fully explains how to enable multiple languages by using --enable-nls with a space-separated list of language codes or omitting the list to install all available translations."
+    "_validation_reason": "The excerpt explicitly states to download the postgresql-version.tar.gz or .tar.bz2 from the given URL, shows the tar xf command to unpack which creates the postgresql-version directory, and mentions using Git as an alternative (Section I.1)."
   },
   {
-    "question": "how do i implement a consistent function for a gist index in C?",
-    "expected_answer": "You write a C function following the signature shown, taking the index entry, query value, strategy number, subtype Oid, and a recheck pointer. Inside, you check if the index entry matches the query according to the strategy, set the recheck flag to true if the match is only possible (lossy), or false if exact; then return a bool indicating consistency. Use the provided skeleton code as a template.",
-    "source_chunk_id": "gist-extensibility.html_2",
+    "question": "How can I write a multidimensional array literal without repeating ARRAY for the inner arrays?",
+    "expected_answer": "You can omit the ARRAY keyword for inner constructors by nesting brackets, for example ARRAY[[1,2],[3,4]] produces the same result as ARRAY[ARRAY[1,2], ARRAY[3,4]].",
+    "source_chunk_id": "sql-expressions.html_21",
     "acceptable_chunk_ids": [
-      "gist-extensibility.html_1",
-      "gist-extensibility.html_2",
-      "gist-extensibility.html_3"
+      "sql-expressions.html_20",
+      "sql-expressions.html_21",
+      "sql-expressions.html_22"
     ],
-    "source_chunk_content": "`consistent`\n:   Given an index entry `p` and a query value `q`,\n    this function determines whether the index entry is\n    “consistent” with the query; that is, could the predicate\n    “*`indexed_column`*\n    *`indexable_operator`* `q`” be true for\n    any row represented by the index entry? For a leaf index entry this is\n    equivalent to testing the indexable condition, while for an internal\n    tree node this determines whether it is necessary to scan the subtree\n    of the index represented by the tree node. When the result is\n    `true`, a `recheck` flag must also be returned.\n    This indicates whether the predicate is certainly true or only possibly\n    true. If `recheck` = `false` then the index has\n    tested the predicate condition exactly, whereas if `recheck`\n    = `true` the row is only a candidate match. In that case the\n    system will automatically evaluate the\n    *`indexable_operator`* against the actual row value to see\n    if it is really a match. This convention allows\n    GiST to support both lossless and lossy index\n    structures.\n\n    The SQL declaration of the function must look like this:\n\n    \n```sql\nCREATE OR REPLACE FUNCTION my_consistent(internal, data_type, smallint, oid, internal)\nRETURNS bool\nAS 'MODULE_PATHNAME'\nLANGUAGE C STRICT;\n```\n\n    And the matching code in the C module could then follow this skeleton:\n\n    \n```sql\nPG_FUNCTION_INFO_V1(my_consistent);\n\nDatum\nmy_consistent(PG_FUNCTION_ARGS)\n{\n    GISTENTRY  *entry = (GISTENTRY *) PG_GETARG_POINTER(0);\n    data_type  *query = PG_GETARG_DATA_TYPE_P(1);\n    StrategyNumber strategy = (StrategyNumber) PG_GETARG_UINT16(2);\n    /* Oid subtype = PG_GETARG_OID(3); */\n    bool       *recheck = (bool *) PG_GETARG_POINTER(4);\n    data_type  *key = DatumGetDataType(entry->key);\n    bool        retval;\n\n    /*\n     * determine return value as a function of strategy, key and query.\n     *\n     * Use GIST_LEAF(entry) to know where you're called in the index tree,\n     * which comes handy when supporting the = operator for example (you could\n     * check for non empty union() in non-leaf nodes and equality in leaf\n     * nodes).\n     */\n\n    *recheck = true;        /* or false if check is exact */\n\n    PG_RETURN_BOOL(retval);\n}\n```\n\n    Here, `key` is an element in the index and `query`\n    the value being looked up in the index. The `StrategyNumber`\n    parameter indicates which operator of your operator class is being\n    applied — it matches one of the operator numbers in the\n    `CREATE OPERATOR CLASS` command.",
-    "source_file": "gist-extensibility.html",
-    "source_title": "68.3. Extensibility",
-    "source_url": "https://www.postgresql.org/docs/16/gist-extensibility.html",
-    "token_count": 617,
-    "_valid": true,
-    "_validation_reason": "The excerpt provides the exact function signature, parameter descriptions, expected behavior, and a complete C code skeleton needed to implement a consistent function for a GiST index."
-  },
-  {
-    "question": "how do basic regular expressions in postgres treat the |, +, and ? characters?",
-    "expected_answer": "In basic regular expressions (BREs) in PostgreSQL, the characters |, +, and ? are treated as ordinary characters with no special functionality, unlike in extended regular expressions.",
-    "source_chunk_id": "functions-matching.html_49",
-    "acceptable_chunk_ids": [
-      "functions-matching.html_48",
-      "functions-matching.html_49",
-      "functions-matching.html_50"
-    ],
-    "source_chunk_content": "#### 9.7.3.7. Basic Regular Expressions \n\nBREs differ from EREs in several respects.\nIn BREs, `|`, `+`, and `?`\nare ordinary characters and there is no equivalent\nfor their functionality.\nThe delimiters for bounds are\n`\\{` and `\\}`,\nwith `{` and `}`\nby themselves ordinary characters.\nThe parentheses for nested subexpressions are\n`\\(` and `\\)`,\nwith `(` and `)` by themselves ordinary characters.\n`^` is an ordinary character except at the beginning of the\nRE or the beginning of a parenthesized subexpression,\n`$` is an ordinary character except at the end of the\nRE or the end of a parenthesized subexpression,\nand `*` is an ordinary character if it appears at the beginning\nof the RE or the beginning of a parenthesized subexpression\n(after a possible leading `^`).\nFinally, single-digit back references are available, and\n`\\<` and `\\>`\nare synonyms for\n`[[:<:]]` and `[[:>:]]`\nrespectively; no other escapes are available in BREs.\n\n#### 9.7.3.8. Differences from SQL Standard and XQuery \n\nSince SQL:2008, the SQL standard includes regular expression operators\nand functions that performs pattern\nmatching according to the XQuery regular expression\nstandard:\n\n* `LIKE_REGEX`\n* `OCCURRENCES_REGEX`\n* `POSITION_REGEX`\n* `SUBSTRING_REGEX`\n* `TRANSLATE_REGEX`",
-    "source_file": "functions-matching.html",
-    "source_title": "9.7. Pattern Matching",
-    "source_url": "https://www.postgresql.org/docs/16/functions-matching.html",
-    "token_count": 320,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that in BREs, |, +, and ? are ordinary characters and there is no equivalent for their functionality."
-  },
-  {
-    "question": "How can I check if my new DTrace probe for transaction start is available after recompiling PostgreSQL?",
-    "expected_answer": "After recompiling with your new probe, run the command `dtrace -ln transaction-start`. If the probe is available, you will see output listing the probe ID, provider, module, function, and name similar to the example shown.",
-    "source_chunk_id": "dynamic-trace.html_17",
-    "acceptable_chunk_ids": [
-      "dynamic-trace.html_16",
-      "dynamic-trace.html_17"
-    ],
-    "source_chunk_content": "```sql\nTRACE_POSTGRESQL_TRANSACTION_START(vxid.localTransactionId);\n```\n\n4. After recompiling and running the new binary, check that your newly added\n   probe is available by executing the following DTrace command. You\n   should see similar output:\n\n   \n```sql\n# dtrace -ln transaction-start\n   ID    PROVIDER          MODULE           FUNCTION NAME\n18705 postgresql49878     postgres     StartTransactionCommand transaction-start\n18755 postgresql49877     postgres     StartTransactionCommand transaction-start\n18805 postgresql49876     postgres     StartTransactionCommand transaction-start\n18855 postgresql49875     postgres     StartTransactionCommand transaction-start\n18986 postgresql49873     postgres     StartTransactionCommand transaction-start\n```\n\nThere are a few things to be careful about when adding trace macros\nto the C code:\n\n* You should take care that the data types specified for a probe's\n  parameters match the data types of the variables used in the macro.\n  Otherwise, you will get compilation errors.\n* On most platforms, if PostgreSQL is\n  built with `--enable-dtrace`, the arguments to a trace\n  macro will be evaluated whenever control passes through the\n  macro, *even if no tracing is being done*. This is\n  usually not worth worrying about if you are just reporting the\n  values of a few local variables. But beware of putting expensive\n  function calls into the arguments. If you need to do that,\n  consider protecting the macro with a check to see if the trace\n  is actually enabled:\n\n  \n```sql\nif (TRACE_POSTGRESQL_TRANSACTION_START_ENABLED())\n    TRACE_POSTGRESQL_TRANSACTION_START(some_function(...));\n```\n\n  Each trace macro has a corresponding `ENABLED` macro.",
-    "source_file": "dynamic-trace.html",
-    "source_title": "28.5. Dynamic Tracing",
-    "source_url": "https://www.postgresql.org/docs/16/dynamic-trace.html",
-    "token_count": 364,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly shows the command to run and the expected output format to verify the availability of the new DTrace probe after recompiling."
-  },
-  {
-    "question": "how is the execution state of a CustomScan represented in postgres?",
-    "expected_answer": "The execution state of a CustomScan is represented by a CustomScanState struct, which includes a ScanState member 'ss', a uint32 flags bitmask, and a pointer to CustomExecMethods 'methods' that implement the custom methods for execution.",
-    "source_chunk_id": "custom-scan-execution.html_0",
-    "acceptable_chunk_ids": [
-      "custom-scan-execution.html_0",
-      "custom-scan-execution.html_1"
-    ],
-    "source_chunk_content": "## 61.3. Executing Custom Scans \n\nWhen a `CustomScan` is executed, its execution state is\nrepresented by a `CustomScanState`, which is declared as\nfollows:\n\n```sql\ntypedef struct CustomScanState\n{\n    ScanState ss;\n    uint32    flags;\n    const CustomExecMethods *methods;\n} CustomScanState;\n```\n\n`ss` is initialized as for any other scan state,\nexcept that if the scan is for a join rather than a base relation,\n`ss.ss_currentRelation` is left NULL.\n`flags` is a bit mask with the same meaning as in\n`CustomPath` and `CustomScan`.\n`methods` must point to a (usually statically allocated)\nobject implementing the required custom scan state methods, which are\nfurther detailed below. Typically, a `CustomScanState`, which\nneed not support `copyObject`, will actually be a larger\nstructure embedding the above as its first member.",
-    "source_file": "custom-scan-execution.html",
-    "source_title": "61.3. Executing Custom Scans",
-    "source_url": "https://www.postgresql.org/docs/16/custom-scan-execution.html",
-    "token_count": 199,
-    "_valid": true,
-    "_validation_reason": "The excerpt fully describes that the execution state of a CustomScan is represented by a CustomScanState struct with the mentioned members."
-  },
-  {
-    "question": "How do I find where the PostgreSQL server header files are installed on my system?",
-    "expected_answer": "You can use the command `pg_config --includedir-server` to find the location of the PostgreSQL server header files on your system.",
-    "source_chunk_id": "xfunc-c.html_17",
-    "acceptable_chunk_ids": [
-      "xfunc-c.html_16",
-      "xfunc-c.html_17",
-      "xfunc-c.html_18"
-    ],
-    "source_chunk_content": "* Use `pg_config\n  --includedir-server`\n  to find out where the PostgreSQL server header\n  files are installed on your system (or the system that your\n  users will be running on).\n* Compiling and linking your code so that it can be dynamically\n  loaded into PostgreSQL always\n  requires special flags. See [Section 38.10.5](xfunc-c.html#DFUNC \"38.10.5. Compiling and Linking Dynamically-Loaded Functions\") for a\n  detailed explanation of how to do it for your particular\n  operating system.\n* Remember to define a “magic block” for your shared library,\n  as described in [Section 38.10.1](xfunc-c.html#XFUNC-C-DYNLOAD \"38.10.1. Dynamic Loading\").\n* When allocating memory, use the\n  PostgreSQL functions\n  `palloc` and `pfree`\n  instead of the corresponding C library functions\n  `malloc` and `free`.\n  The memory allocated by `palloc` will be\n  freed automatically at the end of each transaction, preventing\n  memory leaks.\n* Always zero the bytes of your structures using `memset`\n  (or allocate them with `palloc0` in the first place).\n  Even if you assign to each field of your structure, there might be\n  alignment padding (holes in the structure) that contain\n  garbage values. Without this, it's difficult to\n  support hash indexes or hash joins, as you must pick out only\n  the significant bits of your data structure to compute a hash.\n  The planner also sometimes relies on comparing constants via\n  bitwise equality, so you can get undesirable planning results if\n  logically-equivalent values aren't bitwise equal.\n* Most of the internal PostgreSQL\n  types are declared in `postgres.h`, while",
-    "source_file": "xfunc-c.html",
-    "source_title": "38.10. C-Language Functions",
-    "source_url": "https://www.postgresql.org/docs/16/xfunc-c.html",
-    "token_count": 386,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that using `pg_config --includedir-server` will reveal where the PostgreSQL server header files are installed on your system."
-  },
-  {
-    "question": "Can I use SQL functions to define operators in a PostgreSQL operator class?",
-    "expected_answer": "No, operators should not be defined by SQL functions because they are likely to be inlined into the query, which prevents the optimizer from recognizing the query matches an index.",
-    "source_chunk_id": "sql-createopclass.html_4",
-    "acceptable_chunk_ids": [
-      "sql-createopclass.html_3",
-      "sql-createopclass.html_4"
-    ],
-    "source_chunk_content": "## Notes\n\nBecause the index machinery does not check access permissions on functions\nbefore using them, including a function or operator in an operator class\nis tantamount to granting public execute permission on it. This is usually\nnot an issue for the sorts of functions that are useful in an operator\nclass.\n\nThe operators should not be defined by SQL functions. An SQL function\nis likely to be inlined into the calling query, which will prevent\nthe optimizer from recognizing that the query matches an index.\n\nBefore PostgreSQL 8.4, the `OPERATOR`\nclause could include a `RECHECK` option. This is no longer\nsupported because whether an index operator is “lossy” is now\ndetermined on-the-fly at run time. This allows efficient handling of\ncases where an operator might or might not be lossy.\n\n## Examples\n\nThe following example command defines a GiST index operator class\nfor the data type `_int4` (array of `int4`). See the\n[intarray](intarray.html \"F.20. intarray — manipulate arrays of integers\") module for the complete example.\n\n```sql\nCREATE OPERATOR CLASS gist__int_ops\n    DEFAULT FOR TYPE _int4 USING gist AS\n        OPERATOR        3       &&,\n        OPERATOR        6       = (anyarray, anyarray),\n        OPERATOR        7       @>,\n        OPERATOR        8       <@,\n        OPERATOR        20      @@ (_int4, query_int),\n        FUNCTION        1       g_int_consistent (internal, _int4, smallint, oid, internal),\n        FUNCTION        2       g_int_union (internal, internal),\n        FUNCTION        3       g_int_compress (internal),\n        FUNCTION        4       g_int_decompress (internal),\n        FUNCTION        5       g_int_penalty (internal, internal, internal),\n        FUNCTION        6       g_int_picksplit (internal, internal),\n        FUNCTION        7       g_int_same (_int4, _int4, internal);\n```\n\n## Compatibility\n\n`CREATE OPERATOR CLASS` is a\nPostgreSQL extension. There is no\n`CREATE OPERATOR CLASS` statement in the SQL\nstandard.\n\n## See Also\n\n[ALTER OPERATOR CLASS](sql-alteropclass.html \"ALTER OPERATOR CLASS\"), [DROP OPERATOR CLASS](sql-dropopclass.html \"DROP OPERATOR CLASS\"), [CREATE OPERATOR FAMILY](sql-createopfamily.html \"CREATE OPERATOR FAMILY\"), [ALTER OPERATOR FAMILY](sql-alteropfamily.html \"ALTER OPERATOR FAMILY\")",
-    "source_file": "sql-createopclass.html",
-    "source_title": "CREATE OPERATOR CLASS",
-    "source_url": "https://www.postgresql.org/docs/16/sql-createopclass.html",
-    "token_count": 532,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that operators should not be defined by SQL functions because they are likely to be inlined into the calling query, preventing the optimizer from recognizing that the query matches an index."
-  },
-  {
-    "question": "how can i add new operating system locales to postgres collations after initialization?",
-    "expected_answer": "You can create a new collation using the CREATE COLLATION command if you need different LC_COLLATE and LC_CTYPE values or if new locales are installed after initialization. Alternatively, you can import new OS locales in bulk using the pg_import_system_collations() function.",
-    "source_chunk_id": "collation.html_9",
-    "acceptable_chunk_ids": [
-      "collation.html_8",
-      "collation.html_9",
-      "collation.html_10"
-    ],
-    "source_chunk_content": "##### 24.2.2.2.1. libc Collations \n\nFor example, the operating system might\nprovide a locale named `de_DE.utf8`.\n`initdb` would then create a collation named\n`de_DE.utf8` for encoding `UTF8`\nthat has both `LC_COLLATE` and\n`LC_CTYPE` set to `de_DE.utf8`.\nIt will also create a collation with the `.utf8`\ntag stripped off the name. So you could also use the collation\nunder the name `de_DE`, which is less cumbersome\nto write and makes the name less encoding-dependent. Note that,\nnevertheless, the initial set of collation names is\nplatform-dependent.\n\nThe default set of collations provided by `libc` map\ndirectly to the locales installed in the operating system, which can be\nlisted using the command `locale -a`. In case\na `libc` collation is needed that has different values\nfor `LC_COLLATE` and `LC_CTYPE`, or if new\nlocales are installed in the operating system after the database system\nwas initialized, then a new collation may be created using\nthe [CREATE COLLATION](sql-createcollation.html \"CREATE COLLATION\") command.\nNew operating system locales can also be imported en masse using\nthe [`pg_import_system_collations()`](functions-admin.html#FUNCTIONS-ADMIN-COLLATION \"Table 9.98. Collation Management Functions\") function.",
-    "source_file": "collation.html",
-    "source_title": "24.2. Collation Support",
-    "source_url": "https://www.postgresql.org/docs/16/collation.html",
-    "token_count": 309,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that new collations can be created using CREATE COLLATION and that new OS locales can be imported using pg_import_system_collations() after initialization."
-  },
-  {
-    "question": "how do i allow a role member to grant membership to others?",
-    "expected_answer": "Use the GRANT command with the WITH ADMIN OPTION (or WITH ADMIN TRUE) to grant membership with the admin privilege, allowing that member to grant or revoke membership for others.",
-    "source_chunk_id": "sql-grant.html_4",
-    "acceptable_chunk_ids": [
-      "sql-grant.html_3",
-      "sql-grant.html_4",
-      "sql-grant.html_5"
-    ],
-    "source_chunk_content": "### GRANT on Roles\n\nThis variant of the `GRANT` command grants membership\nin a role to one or more other roles, and the modification of\nmembership options `SET`, `INHERIT`,\nand `ADMIN`; see [Section 22.3](role-membership.html \"22.3. Role Membership\")\nfor details. Membership in a role is significant\nbecause it potentially allows access to the privileges granted to a role\nto each of its members, and potentially also the ability to make changes\nto the role itself. However, the actual permissions conferred depend on\nthe options associated with the grant. To modify that options of\nan existing membership, simply specify the membership with updated\noption values.\n\nEach of the options described below can be set to either\n`TRUE` or `FALSE`. The keyword\n`OPTION` is accepted as a synonym for\n`TRUE`, so that `WITH ADMIN OPTION`\nis a synonym for `WITH ADMIN TRUE`. When altering\nan existing membership the omission of an option results in the current\nvalue being retained.\n\nThe `ADMIN` option allows the member to\nin turn grant membership in the role to others, and revoke membership\nin the role as well. Without the admin option, ordinary users cannot\ndo that. A role is not considered to hold `WITH ADMIN\nOPTION` on itself. Database superusers can grant or revoke\nmembership in any role to anyone. This option defaults to\n`FALSE`.",
-    "source_file": "sql-grant.html",
-    "source_title": "GRANT",
-    "source_url": "https://www.postgresql.org/docs/16/sql-grant.html",
-    "token_count": 299,
-    "_valid": true,
-    "_validation_reason": "The excerpt explains that using WITH ADMIN OPTION (or WITH ADMIN TRUE) with the GRANT command allows a role member to grant or revoke membership to others."
-  },
-  {
-    "question": "What does a Byte1 value of 'k' signify in the message format?",
-    "expected_answer": "A Byte1 value of 'k' identifies the message as a sender keepalive.",
-    "source_chunk_id": "protocol-replication.html_11",
-    "acceptable_chunk_ids": [
-      "protocol-replication.html_10",
-      "protocol-replication.html_11",
-      "protocol-replication.html_12"
-    ],
-    "source_chunk_content": "Byte1('k')\n        :   Identifies the message as a sender keepalive.\n\n        Int64\n        :   The current end of WAL on the server.\n\n        Int64\n        :   The server's system clock at the time of transmission, as\n            microseconds since midnight on 2000-01-01.\n\n        Byte1\n        :   1 means that the client should reply to this message as soon as\n            possible, to avoid a timeout disconnect. 0 otherwise.\n\n    The receiving process can send replies back to the sender at any time,\n    using one of the following message formats (also in the payload of a\n    CopyData message):",
-    "source_file": "protocol-replication.html",
-    "source_title": "55.4. Streaming Replication Protocol",
-    "source_url": "https://www.postgresql.org/docs/16/protocol-replication.html",
-    "token_count": 138,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that Byte1('k') identifies the message as a sender keepalive."
-  },
-  {
-    "question": "How do I tell psql to keep using the same user, host, and port as my previous connection?",
-    "expected_answer": "By default, psql re-uses parameters from the previous connection when using positional syntax, so if you don't specify user, host, or port, it keeps their previous values. You can also explicitly pass -reuse-previous=on to ensure parameters are reused.",
-    "source_chunk_id": "app-psql.html_21",
-    "acceptable_chunk_ids": [
-      "app-psql.html_20",
-      "app-psql.html_21",
-      "app-psql.html_22"
-    ],
-    "source_chunk_content": "Specifying any\n    of *`dbname`*,\n    *`username`*,\n    *`host`* or\n    *`port`*\n    as `-` is equivalent to omitting that parameter.\n\n    The new connection can re-use connection parameters from the previous\n    connection; not only database name, user, host, and port, but other\n    settings such as *`sslmode`*. By default,\n    parameters are re-used in the positional syntax, but not when\n    a *`conninfo`* string is given. Passing a\n    first argument of `-reuse-previous=on`\n    or `-reuse-previous=off` overrides that default. If\n    parameters are re-used, then any parameter not explicitly specified as\n    a positional parameter or in the *`conninfo`*\n    string is taken from the existing connection's parameters. An\n    exception is that if the *`host`* setting\n    is changed from its previous value using the positional syntax,\n    any *`hostaddr`* setting present in the\n    existing connection's parameters is dropped.\n    Also, any password used for the existing connection will be re-used\n    only if the user, host, and port settings are not changed.\n    When the command neither specifies nor reuses a particular parameter,\n    the libpq default is used.",
-    "source_file": "app-psql.html",
-    "source_title": "psql",
-    "source_url": "https://www.postgresql.org/docs/16/app-psql.html",
-    "token_count": 281,
-    "_valid": true,
-    "_validation_reason": "The excerpt fully explains that psql re-uses parameters by default with positional syntax and how to use -reuse-previous=on to explicitly enable reuse, allowing the user to keep the same user, host, and port from the previous connection."
-  },
-  {
-    "question": "How can I run a SQL file in psql and get error messages with line numbers?",
-    "expected_answer": "You can use the -f option to run a SQL file, which provides error messages with line numbers and may reduce start-up overhead compared to input redirection. Using psql -f filename enables these features.",
-    "source_chunk_id": "app-psql.html_4",
-    "acceptable_chunk_ids": [
-      "app-psql.html_3",
-      "app-psql.html_4",
-      "app-psql.html_5"
-    ],
-    "source_chunk_content": "Using this option is subtly different from writing `psql\n    < filename`. In general,\n    both will do what you expect, but using `-f`\n    enables some nice features such as error messages with line\n    numbers. There is also a slight chance that using this option will\n    reduce the start-up overhead. On the other hand, the variant using\n    the shell's input redirection is (in theory) guaranteed to yield\n    exactly the same output you would have received had you entered\n    everything by hand.\n\n`-F separator`\\ `--field-separator=separator` \n:   Use *`separator`* as the\n    field separator for unaligned output. This is equivalent to\n    `\\pset fieldsep` or `\\f`.\n\n`-h hostname`\\ `--host=hostname` \n:   Specifies the host name of the machine on which the\n    server is running. If the value begins\n    with a slash, it is used as the directory for the Unix-domain\n    socket.\n\n`-H`\\ `--html` \n:   Switches to HTML output mode. This is\n    equivalent to `\\pset format html` or the\n    `\\H` command.\n\n`-l`\\ `--list` \n:   List all available databases, then exit. Other non-connection\n    options are ignored. This is similar to the meta-command\n    `\\list`.",
-    "source_file": "app-psql.html",
-    "source_title": "psql",
-    "source_url": "https://www.postgresql.org/docs/16/app-psql.html",
-    "token_count": 291,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that using the -f option to run a SQL file enables error messages with line numbers, answering the question fully and correctly."
-  },
-  {
-    "question": "Can I recover my database to a time during the base backup process?",
-    "expected_answer": "No, you cannot recover to a time when the base backup was in progress. The stop point for recovery must be after the end time of the base backup, specifically after the end time of pg_backup_stop. To recover to an earlier time within a backup, you need to use the previous base backup and roll forward from there.",
-    "source_chunk_id": "continuous-archiving.html_26",
-    "acceptable_chunk_ids": [
-      "continuous-archiving.html_25",
-      "continuous-archiving.html_26",
-      "continuous-archiving.html_27"
-    ],
-    "source_chunk_content": "### Note\n\nThe stop point must be after the ending time of the base backup, i.e.,\nthe end time of `pg_backup_stop`. You cannot use a base backup\nto recover to a time when that backup was in progress. (To\nrecover to such a time, you must go back to your previous base backup\nand roll forward from there.)",
-    "source_file": "continuous-archiving.html",
-    "source_title": "26.3. Continuous Archiving and Point-in-Time Recovery (PITR)",
-    "source_url": "https://www.postgresql.org/docs/16/continuous-archiving.html",
-    "token_count": 73,
-    "_valid": true,
-    "_validation_reason": "The excerpt clearly states that recovery cannot be done to a time during the base backup process and specifies the conditions for recovery stop time and using the previous base backup for earlier points."
-  },
-  {
-    "question": "How can I perform a case-insensitive pattern match in PostgreSQL?",
-    "expected_answer": "You can use the ILIKE keyword instead of LIKE to make the matching case-insensitive according to the active locale; this is a PostgreSQL extension and is equivalent to the operator ~~*.",
-    "source_chunk_id": "functions-matching.html_3",
-    "acceptable_chunk_ids": [
-      "functions-matching.html_2",
-      "functions-matching.html_3",
-      "functions-matching.html_4"
-    ],
-    "source_chunk_content": "It's also possible to select no escape character by writing\n`ESCAPE ''`. This effectively disables the\nescape mechanism, which makes it impossible to turn off the\nspecial meaning of underscore and percent signs in the pattern.\n\nAccording to the SQL standard, omitting `ESCAPE`\nmeans there is no escape character (rather than defaulting to a\nbackslash), and a zero-length `ESCAPE` value is\ndisallowed. PostgreSQL's behavior in\nthis regard is therefore slightly nonstandard.\n\nThe key word `ILIKE` can be used instead of\n`LIKE` to make the match case-insensitive according\nto the active locale. This is not in the SQL standard but is a\nPostgreSQL extension.\n\nThe operator `~~` is equivalent to\n`LIKE`, and `~~*` corresponds to\n`ILIKE`. There are also\n`!~~` and `!~~*` operators that\nrepresent `NOT LIKE` and `NOT\nILIKE`, respectively. All of these operators are\nPostgreSQL-specific. You may see these\noperator names in `EXPLAIN` output and similar\nplaces, since the parser actually translates `LIKE`\net al. to these operators.\n\nThe phrases `LIKE`, `ILIKE`,\n`NOT LIKE`, and `NOT ILIKE` are\ngenerally treated as operators\nin PostgreSQL syntax; for example they can\nbe used in *`expression`*\n*`operator`* ANY\n(*`subquery`*) constructs, although\nan `ESCAPE` clause cannot be included there. In some\nobscure cases it may be necessary to use the underlying operator names\ninstead.\n\nAlso see the starts-with operator `^@` and the\ncorresponding `starts_with()` function, which are\nuseful in cases where simply matching the beginning of a string is\nneeded.",
-    "source_file": "functions-matching.html",
-    "source_title": "9.7. Pattern Matching",
-    "source_url": "https://www.postgresql.org/docs/16/functions-matching.html",
-    "token_count": 377,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that the ILIKE keyword can be used instead of LIKE to perform case-insensitive matching according to the active locale, and that it corresponds to operator ~~*."
-  },
-  {
-    "question": "How does EXISTS work in a WHERE clause to filter results?",
-    "expected_answer": "EXISTS checks if the subquery returns any rows and evaluates to true if at least one row is found. In a WHERE clause, it filters rows from the outer query by only returning those for which the subquery yields any rows, without needing to look at the row contents.",
-    "source_chunk_id": "functions-subquery.html_1",
-    "acceptable_chunk_ids": [
-      "functions-subquery.html_0",
-      "functions-subquery.html_1",
-      "functions-subquery.html_2"
-    ],
-    "source_chunk_content": "### 9.23.1. `EXISTS` \n\n```sql\nEXISTS (subquery)\n```\n\nThe argument of `EXISTS` is an arbitrary `SELECT` statement,\nor *subquery*. The\nsubquery is evaluated to determine whether it returns any rows.\nIf it returns at least one row, the result of `EXISTS` is\n“true”; if the subquery returns no rows, the result of `EXISTS`\nis “false”.\n\nThe subquery can refer to variables from the surrounding query,\nwhich will act as constants during any one evaluation of the subquery.\n\nThe subquery will generally only be executed long enough to determine\nwhether at least one row is returned, not all the way to completion.\nIt is unwise to write a subquery that has side effects (such as\ncalling sequence functions); whether the side effects occur\nmight be unpredictable.\n\nSince the result depends only on whether any rows are returned,\nand not on the contents of those rows, the output list of the\nsubquery is normally unimportant. A common coding convention is\nto write all `EXISTS` tests in the form\n`EXISTS(SELECT 1 WHERE ...)`. There are exceptions to\nthis rule however, such as subqueries that use `INTERSECT`.\n\nThis simple example is like an inner join on `col2`, but\nit produces at most one output row for each `tab1` row,\neven if there are several matching `tab2` rows:\n\n```sql\nSELECT col1\nFROM tab1\nWHERE EXISTS (SELECT 1 FROM tab2 WHERE col2 = tab1.col2);\n```",
-    "source_file": "functions-subquery.html",
-    "source_title": "9.23. Subquery Expressions",
-    "source_url": "https://www.postgresql.org/docs/16/functions-subquery.html",
-    "token_count": 336,
-    "_valid": true,
-    "_validation_reason": "The excerpt fully explains that EXISTS returns true if the subquery returns any rows and that it is used in the WHERE clause to filter results based on the existence of matching rows in the subquery."
-  },
-  {
-    "question": "how do i enable an existing event trigger for all sessions?",
-    "expected_answer": "You can enable an existing event trigger for all sessions by using the command: ALTER EVENT TRIGGER name ENABLE ALWAYS.",
-    "source_chunk_id": "sql-altereventtrigger.html_0",
-    "acceptable_chunk_ids": [
-      "sql-altereventtrigger.html_0",
-      "sql-altereventtrigger.html_1"
-    ],
-    "source_chunk_content": "## ALTER EVENT TRIGGER\n\nALTER EVENT TRIGGER — change the definition of an event trigger\n\n## Synopsis\n\n```sql\nALTER EVENT TRIGGER name DISABLE\nALTER EVENT TRIGGER name ENABLE [ REPLICA | ALWAYS ]\nALTER EVENT TRIGGER name OWNER TO { new_owner | CURRENT_ROLE | CURRENT_USER | SESSION_USER }\nALTER EVENT TRIGGER name RENAME TO new_name\n```\n\n## Description\n\n`ALTER EVENT TRIGGER` changes properties of an\nexisting event trigger.\n\nYou must be superuser to alter an event trigger.\n\n## Parameters",
-    "source_file": "sql-altereventtrigger.html",
-    "source_title": "ALTER EVENT TRIGGER",
-    "source_url": "https://www.postgresql.org/docs/16/sql-altereventtrigger.html",
-    "token_count": 108,
-    "_valid": true,
-    "_validation_reason": "The excerpt includes the syntax for enabling an event trigger with the ALWAYS option, indicating it applies to all sessions."
-  },
-  {
-    "question": "What happens if I use ROLLBACK AND CHAIN outside of a transaction in PostgreSQL?",
-    "expected_answer": "Using ROLLBACK AND CHAIN outside of a transaction block results in an error because it requires an active transaction to chain into a new one.",
-    "source_chunk_id": "sql-rollback.html_1",
-    "acceptable_chunk_ids": [
-      "sql-rollback.html_0",
-      "sql-rollback.html_1"
-    ],
-    "source_chunk_content": "`WORK`\\ `TRANSACTION` \n:   Optional key words. They have no effect.\n\n`AND CHAIN` \n:   If `AND CHAIN` is specified, a new (not aborted)\n    transaction is immediately started with the same transaction\n    characteristics (see [SET TRANSACTION](sql-set-transaction.html \"SET TRANSACTION\")) as the\n    just finished one. Otherwise, no new transaction is started.\n\n## Notes\n\nUse [`COMMIT`](sql-commit.html \"COMMIT\") to\nsuccessfully terminate a transaction.\n\nIssuing `ROLLBACK` outside of a transaction\nblock emits a warning and otherwise has no effect. `ROLLBACK AND\nCHAIN` outside of a transaction block is an error.\n\n## Examples\n\nTo abort all changes:\n\n```sql\nROLLBACK;\n```\n\n## Compatibility\n\nThe command `ROLLBACK` conforms to the SQL standard. The\nform `ROLLBACK TRANSACTION` is a PostgreSQL extension.\n\n## See Also\n\n[BEGIN](sql-begin.html \"BEGIN\"), [COMMIT](sql-commit.html \"COMMIT\"), [ROLLBACK TO SAVEPOINT](sql-rollback-to.html \"ROLLBACK TO SAVEPOINT\")",
-    "source_file": "sql-rollback.html",
-    "source_title": "ROLLBACK",
-    "source_url": "https://www.postgresql.org/docs/16/sql-rollback.html",
-    "token_count": 231,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that 'ROLLBACK AND CHAIN outside of a transaction block is an error,' fully answering the question without needing additional information."
-  },
-  {
-    "question": "How does pg_verifybackup handle files like postgresql.auto.conf or standby.signal during verification?",
-    "expected_answer": "pg_verifybackup ignores the presence, absence, or modifications of postgresql.auto.conf, standby.signal, and recovery.signal files during verification since these files may be created or changed as part of the backup process and won't cause errors.",
-    "source_chunk_id": "app-pgverifybackup.html_2",
-    "acceptable_chunk_ids": [
-      "app-pgverifybackup.html_1",
-      "app-pgverifybackup.html_2",
-      "app-pgverifybackup.html_3"
-    ],
-    "source_chunk_content": "Second, `pg_verifybackup` will attempt to verify that\nthe data files currently stored on disk are exactly the same as the data\nfiles which the server intended to send, with some exceptions that are\ndescribed below. Extra and missing files will be detected, with a few\nexceptions. This step will ignore the presence or absence of, or any\nmodifications to, `postgresql.auto.conf`,\n`standby.signal`, and `recovery.signal`,\nbecause it is expected that these files may have been created or modified\nas part of the process of taking the backup. It also won't complain about\na `backup_manifest` file in the target directory or\nabout anything inside `pg_wal`, even though these\nfiles won't be listed in the backup manifest. Only files are checked;\nthe presence or absence of directories is not verified, except\nindirectly: if a directory is missing, any files it should have contained\nwill necessarily also be missing.\n\nNext, `pg_verifybackup` will checksum all the files,\ncompare the checksums against the values in the manifest, and emit errors\nfor any files for which the computed checksum does not match the\nchecksum stored in the manifest. This step is not performed for any files\nwhich produced errors in the previous step, since they are already known\nto have problems. Files which were ignored in the previous step are also\nignored in this step.",
-    "source_file": "app-pgverifybackup.html",
-    "source_title": "pg_verifybackup",
-    "source_url": "https://www.postgresql.org/docs/16/app-pgverifybackup.html",
-    "token_count": 288,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that pg_verifybackup ignores presence, absence, or modifications of postgresql.auto.conf, standby.signal, and recovery.signal files during verification for the reasons described in the answer."
-  },
-  {
-    "question": "How does PostgreSQL handle temporary tables differently compared to the SQL standard?",
-    "expected_answer": "In PostgreSQL, each session must issue its own CREATE TEMPORARY TABLE command, meaning temporary tables exist only in that session, allowing different sessions to use the same temporary table name for different purposes. This differs from the SQL standard, where temporary tables are defined once and exist automatically in every session with empty contents.",
-    "source_chunk_id": "sql-createtable.html_46",
-    "acceptable_chunk_ids": [
-      "sql-createtable.html_45",
-      "sql-createtable.html_46",
-      "sql-createtable.html_47"
-    ],
-    "source_chunk_content": "## Compatibility\n\nThe `CREATE TABLE` command conforms to the\nSQL standard, with exceptions listed below.\n\n### Temporary Tables\n\nAlthough the syntax of `CREATE TEMPORARY TABLE`\nresembles that of the SQL standard, the effect is not the same. In the\nstandard,\ntemporary tables are defined just once and automatically exist (starting\nwith empty contents) in every session that needs them.\nPostgreSQL instead\nrequires each session to issue its own `CREATE TEMPORARY\nTABLE` command for each temporary table to be used. This allows\ndifferent sessions to use the same temporary table name for different\npurposes, whereas the standard's approach constrains all instances of a\ngiven temporary table name to have the same table structure.\n\nThe standard's definition of the behavior of temporary tables is\nwidely ignored. PostgreSQL's behavior\non this point is similar to that of several other SQL databases.\n\nThe SQL standard also distinguishes between global and local temporary\ntables, where a local temporary table has a separate set of contents for\neach SQL module within each session, though its definition is still shared\nacross sessions. Since PostgreSQL does not\nsupport SQL modules, this distinction is not relevant in\nPostgreSQL.\n\nFor compatibility's sake, PostgreSQL will\naccept the `GLOBAL` and `LOCAL` keywords\nin a temporary table declaration, but they currently have no effect.\nUse of these keywords is discouraged, since future versions of\nPostgreSQL might adopt a more\nstandard-compliant interpretation of their meaning.\n\nThe `ON COMMIT` clause for temporary tables\nalso resembles the SQL standard, but has some differences.\nIf the `ON COMMIT` clause is omitted, SQL specifies that the\ndefault behavior is `ON COMMIT DELETE ROWS`. However, the\ndefault behavior in PostgreSQL is\n`ON COMMIT PRESERVE ROWS`. The `ON COMMIT\nDROP` option does not exist in SQL.",
-    "source_file": "sql-createtable.html",
-    "source_title": "CREATE TABLE",
-    "source_url": "https://www.postgresql.org/docs/16/sql-createtable.html",
-    "token_count": 382,
-    "_valid": true,
-    "_validation_reason": "The excerpt fully explains the differences in handling temporary tables between PostgreSQL and the SQL standard, including session-specific creation and naming behavior."
-  },
-  {
-    "question": "How does adding an interval of '1 day' differ from adding '24 hours' to a timestamp with time zone during daylight saving changes?",
-    "expected_answer": "When adding interval '1 day' to a timestamp with time zone, it advances the date by one calendar day while keeping the local time of day, adjusting for daylight saving time changes. Adding interval '24 hours' adds exactly 24 hours, which may shift the clock time differently during DST transitions, as shown where adding '1 day' jumps to 12:00 but adding '24 hours' results in 13:00 due to the DST hour skip.",
-    "source_chunk_id": "functions-datetime.html_16",
-    "acceptable_chunk_ids": [
-      "functions-datetime.html_15",
-      "functions-datetime.html_16",
-      "functions-datetime.html_17"
-    ],
-    "source_chunk_content": "```sql\nSELECT (DATE '2001-02-16', DATE '2001-12-21') OVERLAPS\n       (DATE '2001-10-30', DATE '2002-10-30');\nResult: true\nSELECT (DATE '2001-02-16', INTERVAL '100 days') OVERLAPS\n       (DATE '2001-10-30', DATE '2002-10-30');\nResult: false\nSELECT (DATE '2001-10-29', DATE '2001-10-30') OVERLAPS\n       (DATE '2001-10-30', DATE '2001-10-31');\nResult: false\nSELECT (DATE '2001-10-30', DATE '2001-10-30') OVERLAPS\n       (DATE '2001-10-30', DATE '2001-10-31');\nResult: true\n```\n\nWhen adding an `interval` value to (or subtracting an\n`interval` value from) a `timestamp`\nor `timestamp with time zone` value, the months, days, and\nmicroseconds fields of the `interval` value are handled in turn.\nFirst, a nonzero months field advances or decrements the date of the\ntimestamp by the indicated number of months, keeping the day of month the\nsame unless it would be past the end of the new month, in which case the\nlast day of that month is used. (For example, March 31 plus 1 month\nbecomes April 30, but March 31 plus 2 months becomes May 31.)\nThen the days field advances or decrements the date of the timestamp by\nthe indicated number of days. In both these steps the local time of day\nis kept the same. Finally, if there is a nonzero microseconds field, it\nis added or subtracted literally.\nWhen doing arithmetic on a `timestamp with time zone` value in\na time zone that recognizes DST, this means that adding or subtracting\n(say) `interval '1 day'` does not necessarily have the\nsame result as adding or subtracting `interval '24\nhours'`.\nFor example, with the session time zone set\nto `America/Denver`:\n\n```sql\nSELECT timestamp with time zone '2005-04-02 12:00:00-07' + interval '1 day';\nResult: 2005-04-03 12:00:00-06\nSELECT timestamp with time zone '2005-04-02 12:00:00-07' + interval '24 hours';\nResult: 2005-04-03 13:00:00-06\n```\n\nThis happens because an hour was skipped due to a change in daylight saving\ntime at `2005-04-03 02:00:00` in time zone\n`America/Denver`.",
-    "source_file": "functions-datetime.html",
-    "source_title": "9.9. Date/Time Functions and Operators",
-    "source_url": "https://www.postgresql.org/docs/16/functions-datetime.html",
-    "token_count": 603,
-    "_valid": true,
-    "_validation_reason": "The excerpt fully explains the difference in behavior between adding '1 day' and '24 hours' to a timestamp with time zone during daylight saving time changes, including examples and the underlying reasons."
-  },
-  {
-    "question": "How does PostgreSQL decide which function version to call when using a variadic function with different argument types?",
-    "expected_answer": "PostgreSQL will choose a more specific function that exactly matches the argument type if available. For example, if you have both a variadic function accepting numeric[] and functions specifically for numeric or int, calls with single int or numeric arguments will prefer the exact-match functions, while only the call with the VARIADIC keyword and an array argument will use the variadic function. This behavior affects security because the generic calls could be intercepted by newly created specific-type functions.",
-    "source_chunk_id": "typeconv-func.html_6",
-    "acceptable_chunk_ids": [
-      "typeconv-func.html_5",
-      "typeconv-func.html_6",
-      "typeconv-func.html_7"
-    ],
-    "source_chunk_content": "Note that the “best match” rules are identical for operator and\nfunction type resolution.\nSome examples follow.\n\n**Example 10.6. Rounding Function Argument Type Resolution**\n\nThere is only one `round` function that takes two\narguments; it takes a first argument of type `numeric` and\na second argument of type `integer`.\nSo the following query automatically converts\nthe first argument of type `integer` to\n`numeric`:\n\n```sql\nSELECT round(4, 4);\n\n round\n--------\n 4.0000\n(1 row)\n```\n\nThat query is actually transformed by the parser to:\n\n```sql\nSELECT round(CAST (4 AS numeric), 4);\n```\n\nSince numeric constants with decimal points are initially assigned the\ntype `numeric`, the following query will require no type\nconversion and therefore might be slightly more efficient:\n\n```sql\nSELECT round(4.0, 4);\n```\n\n\\\n\n**Example 10.7. Variadic Function Resolution**\n\n```sql\nCREATE FUNCTION public.variadic_example(VARIADIC numeric[]) RETURNS int\n  LANGUAGE sql AS 'SELECT 1';\nCREATE FUNCTION\n```\n\nThis function accepts, but does not require, the VARIADIC keyword. It\ntolerates both integer and numeric arguments:\n\n```sql\nSELECT public.variadic_example(0),\n       public.variadic_example(0.0),\n       public.variadic_example(VARIADIC array[0.0]);\n variadic_example | variadic_example | variadic_example\n------------------+------------------+------------------\n                1 |                1 |                1\n(1 row)\n```\n\nHowever, the first and second calls will prefer more-specific functions, if\navailable:\n\n```sql\nCREATE FUNCTION public.variadic_example(numeric) RETURNS int\n  LANGUAGE sql AS 'SELECT 2';\nCREATE FUNCTION\n\nCREATE FUNCTION public.variadic_example(int) RETURNS int\n  LANGUAGE sql AS 'SELECT 3';\nCREATE FUNCTION\n\nSELECT public.variadic_example(0),\n       public.variadic_example(0.0),\n       public.variadic_example(VARIADIC array[0.0]);\n variadic_example | variadic_example | variadic_example\n------------------+------------------+------------------\n                3 |                2 |                1\n(1 row)\n```\n\nGiven the default configuration and only the first function existing, the\nfirst and second calls are insecure. Any user could intercept them by\ncreating the second or third function. By matching the argument type exactly\nand using the `VARIADIC` keyword, the third call is secure.\n\n\\\n\n**Example 10.8. Substring Function Type Resolution**\n\nThere are several `substr` functions, one of which\ntakes types `text` and `integer`. If called\nwith a string constant of unspecified type, the system chooses the\ncandidate function that accepts an argument of the preferred category\n`string` (namely of type `text`).\n\n```sql\nSELECT substr('1234', 3);\n\n substr\n--------\n     34\n(1 row)\n```",
-    "source_file": "typeconv-func.html",
-    "source_title": "10.3. Functions",
-    "source_url": "https://www.postgresql.org/docs/16/typeconv-func.html",
-    "token_count": 640,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly explains how PostgreSQL selects more-specific functions for exact argument type matches over generic variadic functions and illustrates this with examples and security implications."
-  },
-  {
-    "question": "How do I specify the data type and index method when creating a new operator class?",
-    "expected_answer": "You specify the data type of the column the operator class is for using `data_type` and the index method by providing the `index_method` name when creating the operator class.",
-    "source_chunk_id": "sql-createopclass.html_1",
-    "acceptable_chunk_ids": [
-      "sql-createopclass.html_0",
-      "sql-createopclass.html_1",
-      "sql-createopclass.html_2"
-    ],
-    "source_chunk_content": "*`name`*\n:   The name of the operator class to be created. The name can be\n    schema-qualified.\n\n`DEFAULT`\n:   If present, the operator class will become the default\n    operator class for its data type. At most one operator class\n    can be the default for a specific data type and index method.\n\n*`data_type`*\n:   The column data type that this operator class is for.\n\n*`index_method`*\n:   The name of the index method this operator class is for.\n\n*`family_name`*\n:   The name of the existing operator family to add this operator class to.\n    If not specified, a family named the same as the operator class is\n    used (creating it, if it doesn't already exist).\n\n*`strategy_number`*\n:   The index method's strategy number for an operator\n    associated with the operator class.\n\n*`operator_name`*\n:   The name (optionally schema-qualified) of an operator associated\n    with the operator class.\n\n*`op_type`*\n:   In an `OPERATOR` clause,\n    the operand data type(s) of the operator, or `NONE` to\n    signify a prefix operator. The operand data\n    types can be omitted in the normal case where they are the same\n    as the operator class's data type.",
-    "source_file": "sql-createopclass.html",
-    "source_title": "CREATE OPERATOR CLASS",
-    "source_url": "https://www.postgresql.org/docs/16/sql-createopclass.html",
-    "token_count": 281,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly defines `data_type` as the column data type for the operator class and `index_method` as the name of the index method for the operator class, which fully answers how to specify both when creating a new operator class."
-  },
-  {
-    "question": "How can I identify a SASL response message in PostgreSQL protocol?",
-    "expected_answer": "A SASL response message is identified by the initial byte 'p'. This byte is also used for GSSAPI, SSPI, and password response messages, and the exact message type is determined from the context.",
-    "source_chunk_id": "protocol-message-formats.html_60",
-    "acceptable_chunk_ids": [
-      "protocol-message-formats.html_59",
-      "protocol-message-formats.html_60",
-      "protocol-message-formats.html_61"
-    ],
-    "source_chunk_content": "Byte1('p')\n    :   Identifies the message as a SASL response. Note that\n        this is also used for GSSAPI, SSPI and password response messages.\n        The exact message type can be deduced from the context.\n\n    Int32\n    :   Length of message contents in bytes, including self.\n\n    Byte*`n`*\n    :   SASL mechanism specific message data.\n\nSSLRequest (F) \n:",
-    "source_file": "protocol-message-formats.html",
-    "source_title": "55.7. Message Formats",
-    "source_url": "https://www.postgresql.org/docs/16/protocol-message-formats.html",
-    "token_count": 92,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that SASL response messages are identified by the initial byte 'p' and clarifies that this byte is also used for similar message types, with differentiation determined by context."
-  },
-  {
-    "question": "How does the `g` flag affect the replacement behavior in this function?",
-    "expected_answer": "The `g` flag causes the function to replace all matches at or after the start position. However, if a specific match number `N` is given and is non-zero, the `g` flag is ignored and only the Nth match is replaced.",
-    "source_chunk_id": "functions-matching.html_17",
-    "acceptable_chunk_ids": [
-      "functions-matching.html_16",
-      "functions-matching.html_17",
-      "functions-matching.html_18"
-    ],
-    "source_chunk_content": "is replaced.\nIf the `g` flag is given, or\nif *`N`* is specified and is zero, then all\nmatches at or after the *`start`* position are\nreplaced. (The `g` flag is ignored\nwhen *`N`* is specified.)\nThe *`flags`* parameter is an optional text\nstring containing zero or more single-letter flags that change the\nfunction's behavior. Supported flags (though\nnot `g`) are\ndescribed in [Table 9.24](functions-matching.html#POSIX-EMBEDDED-OPTIONS-TABLE \"Table 9.24. ARE Embedded-Option Letters\").",
-    "source_file": "functions-matching.html",
-    "source_title": "9.7. Pattern Matching",
-    "source_url": "https://www.postgresql.org/docs/16/functions-matching.html",
-    "token_count": 142,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that the `g` flag causes all matches at or after the start position to be replaced, and that the `g` flag is ignored if a non-zero `N` is specified, allowing the answer to be fully derived from the text."
-  },
-  {
-    "question": "Why does PostgreSQL use the rule system to implement views?",
-    "expected_answer": "PostgreSQL uses the rule system to implement views so that the query planner has complete information about all tables involved, their relationships, and all query qualifications in a single query tree. This allows the planner to make better decisions on the best execution path, even when the query involves joins over views.",
-    "source_chunk_id": "rules-views.html_9",
-    "acceptable_chunk_ids": [
-      "rules-views.html_8",
-      "rules-views.html_9",
-      "rules-views.html_10"
-    ],
-    "source_chunk_content": "### 41.2.3. The Power of Views in PostgreSQL \n\nThe above demonstrates how the rule system incorporates view\ndefinitions into the original query tree. In the second example, a\nsimple `SELECT` from one view created a final\nquery tree that is a join of 4 tables (`unit` was used twice with\ndifferent names).\n\nThe benefit of implementing views with the rule system is\nthat the planner has all\nthe information about which tables have to be scanned plus the\nrelationships between these tables plus the restrictive\nqualifications from the views plus the qualifications from\nthe original query\nin one single query tree. And this is still the situation\nwhen the original query is already a join over views.\nThe planner has to decide which is\nthe best path to execute the query, and the more information\nthe planner has, the better this decision can be. And\nthe rule system as implemented in PostgreSQL\nensures that this is all information available about the query\nup to that point.",
-    "source_file": "rules-views.html",
-    "source_title": "41.2. Views and the Rule System",
-    "source_url": "https://www.postgresql.org/docs/16/rules-views.html",
-    "token_count": 206,
-    "_valid": true,
-    "_validation_reason": "The excerpt explicitly explains that PostgreSQL uses the rule system for views to provide the planner with complete information about tables, relationships, and qualifications in a single query tree, enabling better execution plans."
-  },
-  {
-    "question": "How can I safely prevent division-by-zero errors in a WHERE clause involving conditional division?",
-    "expected_answer": "You can use a CASE expression to conditionally perform the division only when safe, for example: SELECT ... WHERE CASE WHEN x > 0 THEN y/x > 1.5 ELSE false END;. However, this prevents optimization and is best used only when necessary. Also, rewriting the condition as y > 1.5*x is often a better solution.",
-    "source_chunk_id": "sql-expressions.html_33",
-    "acceptable_chunk_ids": [
-      "sql-expressions.html_32",
-      "sql-expressions.html_33",
-      "sql-expressions.html_34"
-    ],
-    "source_chunk_content": "```sql\nSELECT ... WHERE x > 0 AND y/x > 1.5;\n```\n\nBut this is safe:\n\n```sql\nSELECT ... WHERE CASE WHEN x > 0 THEN y/x > 1.5 ELSE false END;\n```\n\nA `CASE` construct used in this fashion will defeat optimization\nattempts, so it should only be done when necessary. (In this particular\nexample, it would be better to sidestep the problem by writing\n`y > 1.5*x` instead.)\n\n`CASE` is not a cure-all for such issues, however.\nOne limitation of the technique illustrated above is that it does not\nprevent early evaluation of constant subexpressions.\nAs described in [Section 38.7](xfunc-volatility.html \"38.7. Function Volatility Categories\"), functions and\noperators marked `IMMUTABLE` can be evaluated when\nthe query is planned rather than when it is executed. Thus for example\n\n```sql\nSELECT CASE WHEN x > 0 THEN x ELSE 1/0 END FROM tab;\n```\n\nis likely to result in a division-by-zero failure due to the planner\ntrying to simplify the constant subexpression,\neven if every row in the table has `x > 0` so that the\n`ELSE` arm would never be entered at run time.\n\nWhile that particular example might seem silly, related cases that don't\nobviously involve constants can occur in queries executed within\nfunctions, since the values of function arguments and local variables\ncan be inserted into queries as constants for planning purposes.\nWithin PL/pgSQL functions, for example, using an\n`IF`-`THEN`-`ELSE` statement to protect\na risky computation is much safer than just nesting it in a\n`CASE` expression.\n\nAnother limitation of the same kind is that a `CASE` cannot\nprevent evaluation of an aggregate expression contained within it,\nbecause aggregate expressions are computed before other\nexpressions in a `SELECT` list or `HAVING` clause\nare considered. For example, the following query can cause a\ndivision-by-zero error despite seemingly having protected against it:",
+    "source_chunk_content": "### 4.2.12. Array Constructors \n\nAn array constructor is an expression that builds an\narray value using values for its member elements. A simple array\nconstructor\nconsists of the key word `ARRAY`, a left square bracket\n`[`, a list of expressions (separated by commas) for the\narray element values, and finally a right square bracket `]`.\nFor example:\n\n```sql\nSELECT ARRAY[1,2,3+4];\n array\n---------\n {1,2,7}\n(1 row)\n```\n\nBy default,\nthe array element type is the common type of the member expressions,\ndetermined using the same rules as for `UNION` or\n`CASE` constructs (see [Section 10.5](typeconv-union-case.html \"10.5. UNION, CASE, and Related Constructs\")).\nYou can override this by explicitly casting the array constructor to the\ndesired type, for example:\n\n```sql\nSELECT ARRAY[1,2,22.7]::integer[];\n array\n----------\n {1,2,23}\n(1 row)\n```\n\nThis has the same effect as casting each expression to the array\nelement type individually.\nFor more on casting, see [Section 4.2.9](sql-expressions.html#SQL-SYNTAX-TYPE-CASTS \"4.2.9. Type Casts\").\n\nMultidimensional array values can be built by nesting array\nconstructors.\nIn the inner constructors, the key word `ARRAY` can\nbe omitted. For example, these produce the same result:\n\n```sql\nSELECT ARRAY[ARRAY[1,2], ARRAY[3,4]];\n array\n---------------\n {{1,2},{3,4}}\n(1 row)\n\nSELECT ARRAY[[1,2],[3,4]];\n array\n---------------\n {{1,2},{3,4}}\n(1 row)\n```\n\nSince multidimensional arrays must be rectangular, inner constructors\nat the same level must produce sub-arrays of identical dimensions.\nAny cast applied to the outer `ARRAY` constructor propagates\nautomatically to all the inner constructors.\n\nMultidimensional array constructor elements can be anything yielding\nan array of the proper kind, not only a sub-`ARRAY` construct.\nFor example:\n\n```sql\nCREATE TABLE arr(f1 int[], f2 int[]);\n\nINSERT INTO arr VALUES (ARRAY[[1,2],[3,4]], ARRAY[[5,6],[7,8]]);\n\nSELECT ARRAY[f1, f2, '{{9,10},{11,12}}'::int[]] FROM arr;\n array\n------------------------------------------------\n {{{1,2},{3,4}},{{5,6},{7,8}},{{9,10},{11,12}}}\n(1 row)\n```",
     "source_file": "sql-expressions.html",
     "source_title": "4.2. Value Expressions",
     "source_url": "https://www.postgresql.org/docs/16/sql-expressions.html",
-    "token_count": 442,
+    "token_count": 570,
     "_valid": true,
-    "_validation_reason": "The excerpt explicitly explains how to use a CASE expression in the WHERE clause to prevent division-by-zero errors and suggests a better rewriting approach, providing all information needed to answer the question fully and correctly."
+    "_validation_reason": "The excerpt explicitly states that in nested constructors the keyword ARRAY can be omitted and gives the example ARRAY[[1,2],[3,4]] equivalent to ARRAY[ARRAY[1,2], ARRAY[3,4]]."
   },
   {
-    "question": "How do I run PostgreSQL's test suite after building it?",
-    "expected_answer": "You can run the test suite by executing the command `meson test` as an unprivileged user. For tests against a running postgres instance, add the argument `--setup running` to the command like this: `meson test --setup running`.",
-    "source_chunk_id": "install-meson.html_3",
+    "question": "How can I make psql never prompt for a password when running a script or batch job?",
+    "expected_answer": "Use the -w or --no-password option. It tells psql to never issue a password prompt (so if the server requires a password and none is available from other sources like a .pgpass file, the connection attempt will fail), and the setting persists for the entire session including subsequent \\connect calls.",
+    "source_chunk_id": "app-psql.html_9",
     "acceptable_chunk_ids": [
-      "install-meson.html_2",
-      "install-meson.html_3",
-      "install-meson.html_4"
+      "app-psql.html_8",
+      "app-psql.html_9",
+      "app-psql.html_10"
     ],
-    "source_chunk_content": "```sql\nmeson test\n```\n\n   (This won't work as root; do it as an unprivileged user.)\n   See [Chapter 33](regress.html \"Chapter 33. Regression Tests\") for\n   detailed information about interpreting the test results. You can\n   repeat this test at any later time by issuing the same command.\n\n   To run pg\\_regress and pg\\_isolation\\_regress tests against a running\n   postgres instance, specify **`--setup running`** as an\n   argument to **`meson test`**.\n4. **Installing the Files**\n\n   ### Note\n\n   If you are upgrading an existing system be sure to read\n   [Section 19.6](upgrading.html \"19.6. Upgrading a PostgreSQL Cluster\"),\n   which has instructions about upgrading a\n   cluster.",
-    "source_file": "install-meson.html",
-    "source_title": "17.4. Building and Installation with Meson",
-    "source_url": "https://www.postgresql.org/docs/16/install-meson.html",
-    "token_count": 177,
+    "source_chunk_content": "`-V`\\ `--version` \n: Print the psql version and exit.\n\n`-w`\\ `--no-password` \n: Never issue a password prompt. If the server requires password\n authentication and a password is not available from other sources\n such as a `.pgpass` file, the connection\n attempt will fail. This option can be useful in batch jobs and\n scripts where no user is present to enter a password.\n\n Note that this option will remain set for the entire session,\n and so it affects uses of the meta-command\n `\\connect` as well as the initial connection attempt.\n\n`-W`\\ `--password` \n: Force psql to prompt for a\n password before connecting to a database, even if the password will\n not be used.\n\n If the server requires password authentication and a password is not\n available from other sources such as a `.pgpass`\n file, psql will prompt for a\n password in any case. However, psql\n will waste a connection attempt finding out that the server wants a\n password. In some cases it is worth typing `-W` to avoid\n the extra connection attempt.\n\n Note that this option will remain set for the entire session,\n and so it affects uses of the meta-command\n `\\connect` as well as the initial connection attempt.\n\n`-x`\\ `--expanded` \n: Turn on the expanded table formatting mode. This is equivalent to\n `\\x` or `\\pset expanded`.",
+    "source_file": "app-psql.html",
+    "source_title": "psql",
+    "source_url": "https://www.postgresql.org/docs/16/app-psql.html",
+    "token_count": 297,
     "_valid": true,
-    "_validation_reason": "The excerpt provides the exact commands and conditions to run PostgreSQL's test suite after building it, including running tests as an unprivileged user and using the '--setup running' argument for tests against a running instance."
+    "_validation_reason": "The excerpt explicitly documents the -w/--no-password option, stating it never issues a password prompt and that the setting persists for the entire session, which fully answers the question."
   },
   {
-    "question": "how do i change the directory where the write-ahead log files are stored?",
-    "expected_answer": "You can specify the directory for storing write-ahead log (WAL) files using the -X directory or --waldir=directory option.",
-    "source_chunk_id": "app-initdb.html_9",
+    "question": "How does vacuumlo identify and remove orphaned large objects?",
+    "expected_answer": "vacuumlo first creates a temporary table listing all large-object OIDs in the database, then scans all columns of type oid or lo and removes matching entries from that table; the OIDs left in the temporary table are treated as orphaned LOs and are deleted.",
+    "source_chunk_id": "vacuumlo.html_3",
     "acceptable_chunk_ids": [
-      "app-initdb.html_8",
-      "app-initdb.html_9",
-      "app-initdb.html_10"
+      "vacuumlo.html_2",
+      "vacuumlo.html_3"
     ],
-    "source_chunk_content": "`-X directory`\\ `--waldir=directory` \n:   This option specifies the directory where the write-ahead log\n    should be stored.\n\n`--wal-segsize=size` \n:   Set the *WAL segment size*, in megabytes. This\n    is the size of each individual file in the WAL log. The default size\n    is 16 megabytes. The value must be a power of 2 between 1 and 1024\n    (megabytes). This option can only be set during initialization, and\n    cannot be changed later.\n\n    It may be useful to adjust this size to control the granularity of\n    WAL log shipping or archiving. Also, in databases with a high volume\n    of WAL, the sheer number of WAL files per directory can become a\n    performance and management problem. Increasing the WAL file size\n    will reduce the number of WAL files.\n\nOther, less commonly used, options are also available:",
-    "source_file": "app-initdb.html",
-    "source_title": "initdb",
-    "source_url": "https://www.postgresql.org/docs/16/app-initdb.html",
-    "token_count": 199,
+    "source_chunk_content": "`PGHOST`\\ `PGPORT`\\ `PGUSER`\n: Default connection parameters.\n\nThis utility, like most other PostgreSQL utilities,\nalso uses the environment variables supported by libpq\n(see [Section 34.15](libpq-envars.html \"34.15. Environment Variables\")).\n\nThe environment variable `PG_COLOR` specifies whether to use\ncolor in diagnostic messages. Possible values are\n`always`, `auto` and\n`never`.\n\n## Notes\n\nvacuumlo works by the following method:\nFirst, vacuumlo builds a temporary table which contains all\nof the OIDs of the large objects in the selected database. It then scans\nthrough all columns in the database that are of type\n`oid` or `lo`, and removes matching entries from the temporary\ntable. (Note: Only types with these names are considered; in particular,\ndomains over them are not considered.) The remaining entries in the\ntemporary table identify orphaned LOs. These are removed.\n\n## Author\n\nPeter Mount `<peter@retep.org.uk>`",
+    "source_file": "vacuumlo.html",
+    "source_title": "vacuumlo",
+    "source_url": "https://www.postgresql.org/docs/16/vacuumlo.html",
+    "token_count": 214,
     "_valid": true,
-    "_validation_reason": "The excerpt directly explains that the -X directory or --waldir=directory option specifies the directory for storing the write-ahead log files, fully answering the question."
+    "_validation_reason": "The excerpt explicitly describes the full method: create a temp table of all LO OIDs, scan oid/lo columns removing matches, and delete the remaining entries as orphaned LOs."
   },
   {
-    "question": "how do i retrieve a single row result in embedded sql?",
-    "expected_answer": "You use the SELECT statement with an INTO clause placed between the select list and the FROM clause, specifying host variables to store the values. For example: EXEC SQL SELECT a, b INTO :v1, :v2 FROM test;",
-    "source_chunk_id": "ecpg-variables.html_3",
+    "question": "How can I remove positional information and weights from a tsvector?",
+    "expected_answer": "Use the strip(tsvector) function; it returns a tsvector with positions and weights removed. For example: strip('fat:2,4 cat:3 rat:5A'::tsvector) yields 'cat' 'fat' 'rat'.",
+    "source_chunk_id": "functions-textsearch.html_4",
     "acceptable_chunk_ids": [
-      "ecpg-variables.html_2",
-      "ecpg-variables.html_3",
-      "ecpg-variables.html_4"
+      "functions-textsearch.html_3",
+      "functions-textsearch.html_4",
+      "functions-textsearch.html_5"
     ],
-    "source_chunk_content": "### 36.4.3. Retrieving Query Results \n\nNow you should be able to pass data generated by your program into\nan SQL command. But how do you retrieve the results of a query?\nFor that purpose, embedded SQL provides special variants of the\nusual commands `SELECT` and\n`FETCH`. These commands have a special\n`INTO` clause that specifies which host variables\nthe retrieved values are to be stored in.\n`SELECT` is used for a query that returns only\nsingle row, and `FETCH` is used for a query that\nreturns multiple rows, using a cursor.\n\nHere is an example:\n\n```sql\n/*\n * assume this table:\n * CREATE TABLE test1 (a int, b varchar(50));\n */\n\nEXEC SQL BEGIN DECLARE SECTION;\nint v1;\nVARCHAR v2;\nEXEC SQL END DECLARE SECTION;\n\n ...\n\nEXEC SQL SELECT a, b INTO :v1, :v2 FROM test;\n```\n\nSo the `INTO` clause appears between the select\nlist and the `FROM` clause. The number of\nelements in the select list and the list after\n`INTO` (also called the target list) must be\nequal.\n\nHere is an example using the command `FETCH`:\n\n```sql\nEXEC SQL BEGIN DECLARE SECTION;\nint v1;\nVARCHAR v2;\nEXEC SQL END DECLARE SECTION;\n\n ...\n\nEXEC SQL DECLARE foo CURSOR FOR SELECT a, b FROM test;\n\n ...\n\ndo\n{\n    ...\n    EXEC SQL FETCH NEXT FROM foo INTO :v1, :v2;\n    ...\n} while (...);\n```\n\nHere the `INTO` clause appears after all the\nnormal clauses.",
-    "source_file": "ecpg-variables.html",
-    "source_title": "36.4. Using Host Variables",
-    "source_url": "https://www.postgresql.org/docs/16/ecpg-variables.html",
-    "token_count": 338,
+    "source_chunk_content": "| `querytree` ( `tsquery` ) → `text` Produces a representation of the indexable portion of a `tsquery`. A result that is empty or just `T` indicates a non-indexable query. `querytree('foo & ! bar'::tsquery)` → `'foo'` |\n| `setweight` ( *`vector`* `tsvector`, *`weight`* `\"char\"` ) → `tsvector` Assigns the specified *`weight`* to each element of the *`vector`*. `setweight('fat:2,4 cat:3 rat:5B'::tsvector, 'A')` → `'cat':3A 'fat':2A,4A 'rat':5A` |\n| `setweight` ( *`vector`* `tsvector`, *`weight`* `\"char\"`, *`lexemes`* `text[]` ) → `tsvector` Assigns the specified *`weight`* to elements of the *`vector`* that are listed in *`lexemes`*. The strings in *`lexemes`* are taken as lexemes as-is, without further processing. Strings that do not match any lexeme in *`vector`* are ignored. `setweight('fat:2,4 cat:3 rat:5,6B'::tsvector, 'A', '{cat,rat}')` → `'cat':3A 'fat':2,4 'rat':5A,6A` |\n| `strip` ( `tsvector` ) → `tsvector` Removes positions and weights from the `tsvector`. `strip('fat:2,4 cat:3 rat:5A'::tsvector)` → `'cat' 'fat' 'rat'` |",
+    "source_file": "functions-textsearch.html",
+    "source_title": "9.13. Text Search Functions and Operators",
+    "source_url": "https://www.postgresql.org/docs/16/functions-textsearch.html",
+    "token_count": 377,
     "_valid": true,
-    "_validation_reason": "The excerpt explains that retrieving a single row uses the SELECT statement with an INTO clause between the select list and FROM clause, and provides an example illustrating this."
+    "_validation_reason": "The excerpt documents the strip(tsvector) function and gives an example showing it removes positions and weights, which fully answers the question."
   },
   {
-    "question": "how do i specify where a base backup is saved on the server?",
-    "expected_answer": "Use the TARGET option with the value 'server' and provide the directory path with the TARGET_DETAIL option. This requires superuser privileges or the pg_write_server_files role.",
-    "source_chunk_id": "protocol-replication.html_17",
+    "question": "Do I need superuser rights or C programming to create a new text search dictionary or configuration?",
+    "expected_answer": "No — creating dictionaries and configurations does not require special privileges or C programming. However, parsers and templates are implemented in C and require C programming skill and superuser privileges to install into a database.",
+    "source_chunk_id": "textsearch-intro.html_9",
     "acceptable_chunk_ids": [
-      "protocol-replication.html_16",
-      "protocol-replication.html_17",
-      "protocol-replication.html_18"
+      "textsearch-intro.html_8",
+      "textsearch-intro.html_9"
     ],
-    "source_chunk_content": "`LABEL` *`'label'`*\n    :   Sets the label of the backup. If none is specified, a backup label\n        of `base backup` will be used. The quoting rules\n        for the label are the same as a standard SQL string with\n        [standard\\_conforming\\_strings](runtime-config-compatible.html#GUC-STANDARD-CONFORMING-STRINGS) turned on.\n\n    `TARGET` *`'target'`*\n    :   Tells the server where to send the backup. If the target is\n        `client`, which is the default, the backup data is\n        sent to the client. If it is `server`, the backup\n        data is written to the server at the pathname specified by the\n        `TARGET_DETAIL` option. If it is\n        `blackhole`, the backup data is not sent\n        anywhere; it is simply discarded.\n\n        The `server` target requires superuser privilege or\n        being granted the `pg_write_server_files` role.\n\n    `TARGET_DETAIL` *`'detail'`*\n    :   Provides additional information about the backup target.\n\n        Currently, this option can only be used when the backup target is\n        `server`. It specifies the server directory\n        to which the backup should be written.",
-    "source_file": "protocol-replication.html",
-    "source_title": "55.4. Streaming Replication Protocol",
-    "source_url": "https://www.postgresql.org/docs/16/protocol-replication.html",
+    "source_chunk_content": "To make it easier to build custom text search configurations, a\nconfiguration is built up from simpler database objects.\nPostgreSQL's text search facility provides\nfour types of configuration-related database objects:\n\n* *Text search parsers* break documents into tokens\n and classify each token (for example, as words or numbers).\n* *Text search dictionaries* convert tokens to normalized\n form and reject stop words.\n* *Text search templates* provide the functions underlying\n dictionaries. (A dictionary simply specifies a template and a set\n of parameters for the template.)\n* *Text search configurations* select a parser and a set\n of dictionaries to use to normalize the tokens produced by the parser.\n\nText search parsers and templates are built from low-level C functions;\ntherefore it requires C programming ability to develop new ones, and\nsuperuser privileges to install one into a database. (There are examples\nof add-on parsers and templates in the `contrib/` area of the\nPostgreSQL distribution.) Since dictionaries and\nconfigurations just parameterize and connect together some underlying\nparsers and templates, no special privilege is needed to create a new\ndictionary or configuration. Examples of creating custom dictionaries and\nconfigurations appear later in this chapter.",
+    "source_file": "textsearch-intro.html",
+    "source_title": "12.1. Introduction",
+    "source_url": "https://www.postgresql.org/docs/16/textsearch-intro.html",
+    "token_count": 245,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that creating dictionaries and configurations requires no special privileges, while parsers and templates require C programming and superuser privileges, which fully supports the answer."
+  },
+  {
+    "question": "Is SPI_cursor_open_with_args still recommended for new code, and if not what should I use instead?",
+    "expected_answer": "No — SPI_cursor_open_with_args is deprecated. Use SPI_cursor_parse_open instead, which provides equivalent functionality with a more modern API for handling query parameters.",
+    "source_chunk_id": "spi-spi-cursor-open-with-args.html_0",
+    "acceptable_chunk_ids": [
+      "spi-spi-cursor-open-with-args.html_0",
+      "spi-spi-cursor-open-with-args.html_1"
+    ],
+    "source_chunk_content": "## SPI\\_cursor\\_open\\_with\\_args\n\nSPI\\_cursor\\_open\\_with\\_args — set up a cursor using a query and parameters\n\n## Synopsis\n\n```sql\nPortal SPI_cursor_open_with_args(const char *name,\n const char *command,\n int nargs, Oid *argtypes,\n Datum *values, const char *nulls,\n bool read_only, int cursorOptions)\n```\n\n## Description\n\n`SPI_cursor_open_with_args` sets up a cursor\n(internally, a portal) that will execute the specified query.\nMost of the parameters have the same meanings as the corresponding\nparameters to `SPI_prepare_cursor`\nand `SPI_cursor_open`.\n\nFor one-time query execution, this function should be preferred\nover `SPI_prepare_cursor` followed by\n`SPI_cursor_open`.\nIf the same command is to be executed with many different parameters,\neither method might be faster, depending on the cost of re-planning\nversus the benefit of custom plans.\n\nThe passed-in parameter data will be copied into the cursor's portal, so it\ncan be freed while the cursor still exists.\n\nThis function is now deprecated in favor\nof `SPI_cursor_parse_open`, which provides equivalent\nfunctionality using a more modern API for handling query parameters.\n\n## Arguments",
+    "source_file": "spi-spi-cursor-open-with-args.html",
+    "source_title": "SPI_cursor_open_with_args",
+    "source_url": "https://www.postgresql.org/docs/16/spi-spi-cursor-open-with-args.html",
+    "token_count": 257,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that SPI_cursor_open_with_args is deprecated and advises using SPI_cursor_parse_open instead for equivalent functionality with a more modern API."
+  },
+  {
+    "question": "How can I see whether a particular query is using an index?",
+    "expected_answer": "Use the EXPLAIN command to examine whether an individual query uses an index; examples of its application are shown in Section 14.1. For aggregate, server-wide index usage statistics see the cumulative statistics system described in Section 28.2.",
+    "source_chunk_id": "indexes-examine.html_0",
+    "acceptable_chunk_ids": [
+      "indexes-examine.html_0",
+      "indexes-examine.html_1"
+    ],
+    "source_chunk_content": "## 11.12. Examining Index Usage \n\nAlthough indexes in PostgreSQL do not need\nmaintenance or tuning, it is still important to check\nwhich indexes are actually used by the real-life query workload.\nExamining index usage for an individual query is done with the\n[EXPLAIN](sql-explain.html \"EXPLAIN\")\ncommand; its application for this purpose is\nillustrated in [Section 14.1](using-explain.html \"14.1. Using EXPLAIN\").\nIt is also possible to gather overall statistics about index usage\nin a running server, as described in [Section 28.2](monitoring-stats.html \"28.2. The Cumulative Statistics System\").\n\nIt is difficult to formulate a general procedure for determining\nwhich indexes to create. There are a number of typical cases that\nhave been shown in the examples throughout the previous sections.\nA good deal of experimentation is often necessary.\nThe rest of this section gives some tips for that:",
+    "source_file": "indexes-examine.html",
+    "source_title": "11.12. Examining Index Usage",
+    "source_url": "https://www.postgresql.org/docs/16/indexes-examine.html",
+    "token_count": 200,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states to use the EXPLAIN command to examine index use for an individual query and also references Section 14.1 for examples and Section 28.2 for server-wide stats, so it contains the needed information."
+  },
+  {
+    "question": "How can I rename an existing view from foo to bar?",
+    "expected_answer": "Run an ALTER VIEW statement, for example: ALTER VIEW foo RENAME TO bar; this renames the view foo to bar.",
+    "source_chunk_id": "sql-alterview.html_2",
+    "acceptable_chunk_ids": [
+      "sql-alterview.html_1",
+      "sql-alterview.html_2"
+    ],
+    "source_chunk_content": "`check_option` (`enum`)\n : Changes the check option of the view. The value must\n be `local` or `cascaded`.\n\n `security_barrier` (`boolean`)\n : Changes the security-barrier property of the view. The value must\n be a Boolean value, such as `true`\n or `false`.\n\n `security_invoker` (`boolean`)\n : Changes the security-invoker property of the view. The value must\n be a Boolean value, such as `true`\n or `false`.\n\n## Notes\n\nFor historical reasons, `ALTER TABLE` can be used with\nviews too; but the only variants of `ALTER TABLE`\nthat are allowed with views are equivalent to the ones shown above.\n\n## Examples\n\nTo rename the view `foo` to\n`bar`:\n\n```sql\nALTER VIEW foo RENAME TO bar;\n```\n\nTo attach a default column value to an updatable view:\n\n```sql\nCREATE TABLE base_table (id int, ts timestamptz);\nCREATE VIEW a_view AS SELECT * FROM base_table;\nALTER VIEW a_view ALTER COLUMN ts SET DEFAULT now();\nINSERT INTO base_table(id) VALUES(1); -- ts will receive a NULL\nINSERT INTO a_view(id) VALUES(2); -- ts will receive the current time\n```\n\n## Compatibility\n\n`ALTER VIEW` is a PostgreSQL\nextension of the SQL standard.\n\n## See Also\n\n[CREATE VIEW](sql-createview.html \"CREATE VIEW\"), [DROP VIEW](sql-dropview.html \"DROP VIEW\")",
+    "source_file": "sql-alterview.html",
+    "source_title": "ALTER VIEW",
+    "source_url": "https://www.postgresql.org/docs/16/sql-alterview.html",
+    "token_count": 307,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly shows the exact command and example for renaming a view: ALTER VIEW foo RENAME TO bar; which fully answers the question."
+  },
+  {
+    "question": "When are row filters evaluated in logical replication and what happens if the filter returns false or NULL?",
+    "expected_answer": "Row filters are evaluated before publishing changes; if the filter evaluates to false or NULL the row is not replicated. The WHERE expression is evaluated using the replication connection role from the CREATE SUBSCRIPTION's CONNECTION clause, and row filters do not affect TRUNCATE commands.",
+    "source_chunk_id": "logical-replication-row-filter.html_1",
+    "acceptable_chunk_ids": [
+      "logical-replication-row-filter.html_0",
+      "logical-replication-row-filter.html_1",
+      "logical-replication-row-filter.html_2"
+    ],
+    "source_chunk_content": "### 31.3.1. Row Filter Rules \n\nRow filters are applied *before* publishing the changes.\nIf the row filter evaluates to `false` or `NULL`\nthen the row is not replicated. The `WHERE` clause expression\nis evaluated with the same role used for the replication connection (i.e.\nthe role specified in the\n[`CONNECTION`](sql-createsubscription.html#SQL-CREATESUBSCRIPTION-CONNECTION)\nclause of the [CREATE SUBSCRIPTION](sql-createsubscription.html \"CREATE SUBSCRIPTION\")). Row filters have\nno effect for `TRUNCATE` command.",
+    "source_file": "logical-replication-row-filter.html",
+    "source_title": "31.3. Row Filters",
+    "source_url": "https://www.postgresql.org/docs/16/logical-replication-row-filter.html",
+    "token_count": 126,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that row filters are applied before publishing, that false/NULL causes the row not to be replicated, that the WHERE uses the subscription CONNECTION role, and that filters don't affect TRUNCATE, so it contains all needed details."
+  },
+  {
+    "question": "How can I have the server's output go to a log file when I start PostgreSQL with pg_ctl?",
+    "expected_answer": "Use pg_ctl start with the -l option to append the server's stdout/stderr to a log file, or redirect pg_ctl's standard output to a file; using -l or output redirection is recommended.",
+    "source_chunk_id": "app-pg-ctl.html_1",
+    "acceptable_chunk_ids": [
+      "app-pg-ctl.html_0",
+      "app-pg-ctl.html_1",
+      "app-pg-ctl.html_2"
+    ],
+    "source_chunk_content": "## Description\n\npg\\_ctl is a utility for initializing a\nPostgreSQL database cluster, starting,\nstopping, or restarting the PostgreSQL\ndatabase server ([postgres](app-postgres.html \"postgres\")), or displaying the\nstatus of a running server. Although the server can be started\nmanually, pg\\_ctl encapsulates tasks such\nas redirecting log output and properly detaching from the terminal\nand process group. It also provides convenient options for\ncontrolled shutdown.\n\nThe `init` or `initdb` mode creates a new\nPostgreSQL database cluster, that is,\na collection of databases that will be managed by a single\nserver instance. This mode invokes the `initdb`\ncommand. See [initdb](app-initdb.html \"initdb\") for details.\n\n`start` mode launches a new server. The\nserver is started in the background, and its standard input is attached\nto `/dev/null` (or `nul` on Windows).\nOn Unix-like systems, by default, the server's standard output and\nstandard error are sent to pg\\_ctl's\nstandard output (not standard error). The standard output of\npg\\_ctl should then be redirected to a\nfile or piped to another process such as a log rotating program\nlike rotatelogs; otherwise `postgres`\nwill write its output to the controlling terminal (from the\nbackground) and will not leave the shell's process group. On\nWindows, by default the server's standard output and standard error\nare sent to the terminal. These default behaviors can be changed\nby using `-l` to append the server's output to a log file.\nUse of either `-l` or output redirection is recommended.",
+    "source_file": "app-pg-ctl.html",
+    "source_title": "pg_ctl",
+    "source_url": "https://www.postgresql.org/docs/16/app-pg-ctl.html",
+    "token_count": 347,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states you can use -l to append server output to a log file or redirect pg_ctl's standard output to a file and recommends using either method."
+  },
+  {
+    "question": "How do I create a temporary physical replication slot and have it reserve its LSN immediately?",
+    "expected_answer": "Call pg_create_physical_replication_slot with the slot name and both optional flags true, for example pg_create_physical_replication_slot('my_slot', true, true). It returns a record containing the slot_name and the reserved lsn.",
+    "source_chunk_id": "functions-admin.html_16",
+    "acceptable_chunk_ids": [
+      "functions-admin.html_15",
+      "functions-admin.html_16",
+      "functions-admin.html_17"
+    ],
+    "source_chunk_content": "| Function Description |\n| --- |\n| `pg_create_physical_replication_slot` ( *`slot_name`* `name` [, *`immediately_reserve`* `boolean`, *`temporary`* `boolean` ] ) → `record` ( *`slot_name`* `name`, *`lsn`* `pg_lsn` ) Creates a new physical replication slot named *`slot_name`*. The optional second parameter, when `true`, specifies that the LSN for this replication slot be reserved immediately; otherwise the LSN is reserved on first connection from a streaming replication client. Streaming changes from a physical slot is only possible with the streaming-replication protocol — see [Section 55.4](protocol-replication.html \"55.4. Streaming Replication Protocol\"). The optional third parameter, *`temporary`*, when set to true, specifies that the slot should not be permanently stored to disk and is only meant for use by the current session. Temporary slots are also released upon any error. This function corresponds to the replication protocol command `CREATE_REPLICATION_SLOT ... PHYSICAL`. |\n| `pg_drop_replication_slot` ( *`slot_name`* `name` ) → `void` Drops the physical or logical replication slot named *`slot_name`*. Same as replication protocol command `DROP_REPLICATION_SLOT`. |",
+    "source_file": "functions-admin.html",
+    "source_title": "9.27. System Administration Functions",
+    "source_url": "https://www.postgresql.org/docs/16/functions-admin.html",
+    "token_count": 277,
+    "_valid": true,
+    "_validation_reason": "The excerpt shows the function signature and explains that the second parameter (true) reserves the LSN immediately and the third parameter (true) makes the slot temporary, so calling pg_create_physical_replication_slot('my_slot', true, true) is fully supported by the excerpt."
+  },
+  {
+    "question": "Can I include UPDATE statements in an SPI_execute call when read_only is true?",
+    "expected_answer": "No. If read_only is true, SPI_execute allows only plain SELECT commands in the command string; it does not update the snapshot or command counter and executes using the surrounding query's snapshot.",
+    "source_chunk_id": "spi-spi-execute.html_1",
+    "acceptable_chunk_ids": [
+      "spi-spi-execute.html_0",
+      "spi-spi-execute.html_1",
+      "spi-spi-execute.html_2"
+    ],
+    "source_chunk_content": "You can pass multiple commands in one string;\n`SPI_execute` returns the\nresult for the command executed last. The *`count`*\nlimit applies to each command separately (even though only the last\nresult will actually be returned). The limit is not applied to any\nhidden commands generated by rules.\n\nWhen *`read_only`* is `false`,\n`SPI_execute` increments the command\ncounter and computes a new *snapshot* before executing each\ncommand in the string. The snapshot does not actually change if the\ncurrent transaction isolation level is `SERIALIZABLE` or `REPEATABLE READ`, but in\n`READ COMMITTED` mode the snapshot update allows each command to\nsee the results of newly committed transactions from other sessions.\nThis is essential for consistent behavior when the commands are modifying\nthe database.\n\nWhen *`read_only`* is `true`,\n`SPI_execute` does not update either the snapshot\nor the command counter, and it allows only plain `SELECT`\ncommands to appear in the command string. The commands are executed\nusing the snapshot previously established for the surrounding query.\nThis execution mode is somewhat faster than the read/write mode due\nto eliminating per-command overhead. It also allows genuinely\n*stable* functions to be built: since successive executions\nwill all use the same snapshot, there will be no change in the results.\n\nIt is generally unwise to mix read-only and read-write commands within\na single function using SPI; that could result in very confusing behavior,\nsince the read-only queries would not see the results of any database\nupdates done by the read-write queries.",
+    "source_file": "spi-spi-execute.html",
+    "source_title": "SPI_execute",
+    "source_url": "https://www.postgresql.org/docs/16/spi-spi-execute.html",
+    "token_count": 328,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that when read_only is true, SPI_execute allows only plain SELECT commands, so UPDATE statements cannot be included."
+  },
+  {
+    "question": "What isolation level will postgres_fdw use on the remote server depending on my local transaction's isolation level?",
+    "expected_answer": "If the local transaction is SERIALIZABLE, postgres_fdw opens the remote transaction at SERIALIZABLE; otherwise it opens the remote transaction at REPEATABLE READ. This ensures snapshot-consistent results across multiple remote scans, so successive queries in the same local transaction will see the same remote data even under READ COMMITTED locally.",
+    "source_chunk_id": "postgres-fdw.html_18",
+    "acceptable_chunk_ids": [
+      "postgres-fdw.html_17",
+      "postgres-fdw.html_18",
+      "postgres-fdw.html_19"
+    ],
+    "source_chunk_content": "### F.38.4. Transaction Management \n\nDuring a query that references any remote tables on a foreign server,\n`postgres_fdw` opens a transaction on the\nremote server if one is not already open corresponding to the current\nlocal transaction. The remote transaction is committed or aborted when\nthe local transaction commits or aborts. Savepoints are similarly\nmanaged by creating corresponding remote savepoints.\n\nThe remote transaction uses `SERIALIZABLE`\nisolation level when the local transaction has `SERIALIZABLE`\nisolation level; otherwise it uses `REPEATABLE READ`\nisolation level. This choice ensures that if a query performs multiple\ntable scans on the remote server, it will get snapshot-consistent results\nfor all the scans. A consequence is that successive queries within a\nsingle transaction will see the same data from the remote server, even if\nconcurrent updates are occurring on the remote server due to other\nactivities. That behavior would be expected anyway if the local\ntransaction uses `SERIALIZABLE` or `REPEATABLE READ`\nisolation level, but it might be surprising for a `READ\nCOMMITTED` local transaction. A future\nPostgreSQL release might modify these rules.\n\nNote that it is currently not supported by\n`postgres_fdw` to prepare the remote transaction for\ntwo-phase commit.",
+    "source_file": "postgres-fdw.html",
+    "source_title": "F.38. postgres_fdw — access data stored in external PostgreSQL servers",
+    "source_url": "https://www.postgresql.org/docs/16/postgres-fdw.html",
     "token_count": 269,
     "_valid": true,
-    "_validation_reason": "The excerpt explicitly explains that to save a base backup on the server, you use TARGET = 'server' and specify the directory path with TARGET_DETAIL, while also noting the required privileges."
+    "_validation_reason": "The excerpt explicitly states that postgres_fdw uses SERIALIZABLE on the remote server when the local transaction is SERIALIZABLE, and otherwise uses REPEATABLE READ, and also explains the snapshot-consistency consequences for READ COMMITTED."
   },
   {
-    "question": "how can i find out if a backend process is using SSL and which cipher it uses?",
-    "expected_answer": "You can query the pg_stat_ssl view, which shows details about SSL usage for backend processes, including whether SSL is used (ssl column), the SSL version, and the name of the cipher in use (cipher column). NULL values indicate that SSL is not used for that connection.",
-    "source_chunk_id": "monitoring-stats.html_58",
+    "question": "What happens if a TRUNCATE is replicated but some of the tables to be truncated on the subscriber have foreign-key links to tables that are not part of the same subscription?",
+    "expected_answer": "The subscriber will attempt to truncate the same group of tables that were truncated on the publisher (omitting tables not in the subscription), but the truncate will fail if any of the tables to be truncated on the subscriber have foreign-key links to tables that are not part of the same or any subscription.",
+    "source_chunk_id": "logical-replication-restrictions.html_1",
     "acceptable_chunk_ids": [
-      "monitoring-stats.html_57",
-      "monitoring-stats.html_58",
-      "monitoring-stats.html_59"
+      "logical-replication-restrictions.html_0",
+      "logical-replication-restrictions.html_1"
     ],
-    "source_chunk_content": "**Table 28.20. `pg_stat_ssl` View**\n\n| Column Type  Description |\n| --- |\n| `pid` `integer`  Process ID of a backend or WAL sender process |\n| `ssl` `boolean`  True if SSL is used on this connection |\n| `version` `text`  Version of SSL in use, or NULL if SSL is not in use on this connection |\n| `cipher` `text`  Name of SSL cipher in use, or NULL if SSL is not in use on this connection |\n| `bits` `integer`  Number of bits in the encryption algorithm used, or NULL if SSL is not used on this connection |\n| `client_dn` `text`  Distinguished Name (DN) field from the client certificate used, or NULL if no client certificate was supplied or if SSL is not in use on this connection. This field is truncated if the DN field is longer than `NAMEDATALEN` (64 characters in a standard build). |\n| `client_serial` `numeric`  Serial number of the client certificate, or NULL if no client certificate was supplied or if SSL is not in use on this connection. The combination of certificate serial number and certificate issuer uniquely identifies a certificate (unless the issuer erroneously reuses serial numbers). |\n| `issuer_dn` `text`  DN of the issuer of the client certificate, or NULL if no client certificate was supplied or if SSL is not in use on this connection. This field is truncated like `client_dn`. |\n\n\\",
-    "source_file": "monitoring-stats.html",
-    "source_title": "28.2. The Cumulative Statistics System",
-    "source_url": "https://www.postgresql.org/docs/16/monitoring-stats.html",
-    "token_count": 315,
+    "source_chunk_content": "foreign keys. When replicating a truncate action, the subscriber will\n truncate the same group of tables that was truncated on the publisher,\n either explicitly specified or implicitly collected via\n `CASCADE`, minus tables that are not part of the\n subscription. This will work correctly if all affected tables are part\n of the same subscription. But if some tables to be truncated on the\n subscriber have foreign-key links to tables that are not part of the same\n (or any) subscription, then the application of the truncate action on the\n subscriber will fail.\n* Large objects (see [Chapter 35](largeobjects.html \"Chapter 35. Large Objects\")) are not replicated.\n There is no workaround for that, other than storing data in normal\n tables.\n* Replication is only supported by tables, including partitioned tables.\n Attempts to replicate other types of relations, such as views, materialized\n views, or foreign tables, will result in an error.\n* When replicating between partitioned tables, the actual replication\n originates, by default, from the leaf partitions on the publisher, so\n partitions on the publisher must also exist on the subscriber as valid\n target tables. (They could either be leaf partitions themselves, or they\n could be further subpartitioned, or they could even be independent\n tables.) Publications can also specify that changes are to be replicated\n using the identity and schema of the partitioned root table instead of\n that of the individual leaf partitions in which the changes actually\n originate (see\n [`publish_via_partition_root`](sql-createpublication.html#SQL-CREATEPUBLICATION-WITH-PUBLISH-VIA-PARTITION-ROOT)\n parameter of `CREATE PUBLICATION`).",
+    "source_file": "logical-replication-restrictions.html",
+    "source_title": "31.6. Restrictions",
+    "source_url": "https://www.postgresql.org/docs/16/logical-replication-restrictions.html",
+    "token_count": 343,
     "_valid": true,
-    "_validation_reason": "The excerpt fully describes the pg_stat_ssl view and its ssl and cipher columns, which directly answer how to determine SSL usage and cipher for a backend process."
+    "_validation_reason": "The excerpt explicitly states that the subscriber will truncate the same tables (excluding those not in the subscription) and that the truncate will fail if affected tables have foreign-key links to tables not in the same (or any) subscription."
   },
   {
-    "question": "how do i configure the build directory to install postgres to a custom location?",
-    "expected_answer": "You use the meson setup command with the --prefix option, for example: meson setup build --prefix=/home/user/pg-install. This sets the installation prefix to your desired path.",
-    "source_chunk_id": "install-meson.html_1",
+    "question": "How can I make GetForeignDataWrapper return NULL instead of throwing an error if the FDW OID is not defined?",
+    "expected_answer": "Call GetForeignDataWrapperExtended(fdwid, flags) with the FDW_MISSING_OK bit set in the flags; that causes a NULL result to be returned instead of an error for an undefined object.",
+    "source_chunk_id": "fdw-helpers.html_0",
     "acceptable_chunk_ids": [
-      "install-meson.html_0",
-      "install-meson.html_1",
-      "install-meson.html_2"
+      "fdw-helpers.html_0",
+      "fdw-helpers.html_1"
     ],
-    "source_chunk_content": "### 17.4.2. Installation Procedure \n\n1. **Configuration**\n\n   The first step of the installation procedure is to configure the\n   build tree for your system and choose the options you would like. To\n   create and configure the build directory, you can start with the\n   `meson setup` command.\n\n   \n```sql\nmeson setup build\n```\n\n   The setup command takes a `builddir` and a `srcdir`\n   argument. If no `srcdir` is given, Meson will deduce the\n   `srcdir` based on the current directory and the location\n   of `meson.build`. The `builddir` is mandatory.\n\n   Running `meson setup` loads the build configuration file and sets up the build directory.\n   Additionally, you can also pass several build options to Meson. Some commonly\n   used options are mentioned in the subsequent sections. For example:\n\n   \n```sql\n# configure with a different installation prefix\nmeson setup build --prefix=/home/user/pg-install\n\n# configure to generate a debug build\nmeson setup build --buildtype=debug\n\n# configure to build with OpenSSL support\nmeson setup build -Dssl=openssl\n```\n\n   Setting up the build directory is a one-time step. To reconfigure before a\n   new build, you can simply use the `meson configure` command\n\n   \n```sql\nmeson configure -Dcassert=true\n```\n\n   `meson configure`'s commonly used command-line options\n   are explained in [Section 17.4.3](install-meson.html#MESON-OPTIONS \"17.4.3. meson setup Options\").\n2. **Build**\n\n   By default, Meson uses the [Ninja](https://ninja-build.org/) build tool. To build\n   PostgreSQL from source using Meson, you can\n   simply use the `ninja` command in the build directory.\n\n   \n```sql\nninja\n```",
-    "source_file": "install-meson.html",
-    "source_title": "17.4. Building and Installation with Meson",
-    "source_url": "https://www.postgresql.org/docs/16/install-meson.html",
-    "token_count": 419,
+    "source_chunk_content": "## 59.3. Foreign Data Wrapper Helper Functions \n\nSeveral helper functions are exported from the core server so that\nauthors of foreign data wrappers can get easy access to attributes of\nFDW-related objects, such as FDW options.\nTo use any of these functions, you need to include the header file\n`foreign/foreign.h` in your source file.\nThat header also defines the struct types that are returned by\nthese functions.\n\n```sql\nForeignDataWrapper *\nGetForeignDataWrapperExtended(Oid fdwid, bits16 flags);\n```\n\nThis function returns a `ForeignDataWrapper`\nobject for the foreign-data wrapper with the given OID. A\n`ForeignDataWrapper` object contains properties\nof the FDW (see `foreign/foreign.h` for details).\n`flags` is a bitwise-or'd bit mask indicating\nan extra set of options. It can take the value\n`FDW_MISSING_OK`, in which case a `NULL`\nresult is returned to the caller instead of an error for an undefined\nobject.\n\n```sql\nForeignDataWrapper *\nGetForeignDataWrapper(Oid fdwid);\n```\n\nThis function returns a `ForeignDataWrapper`\nobject for the foreign-data wrapper with the given OID. A\n`ForeignDataWrapper` object contains properties\nof the FDW (see `foreign/foreign.h` for details).\n\n```sql\nForeignServer *\nGetForeignServerExtended(Oid serverid, bits16 flags);\n```\n\nThis function returns a `ForeignServer` object\nfor the foreign server with the given OID. A\n`ForeignServer` object contains properties\nof the server (see `foreign/foreign.h` for details).\n`flags` is a bitwise-or'd bit mask indicating\nan extra set of options. It can take the value\n`FSV_MISSING_OK`, in which case a `NULL`\nresult is returned to the caller instead of an error for an undefined\nobject.\n\n```sql\nForeignServer *\nGetForeignServer(Oid serverid);\n```",
+    "source_file": "fdw-helpers.html",
+    "source_title": "59.3. Foreign Data Wrapper Helper Functions",
+    "source_url": "https://www.postgresql.org/docs/16/fdw-helpers.html",
+    "token_count": 408,
     "_valid": true,
-    "_validation_reason": "The excerpt clearly explains using the meson setup command with the --prefix option to configure the build directory for a custom installation location, providing an explicit example that matches the answer."
+    "_validation_reason": "The excerpt documents GetForeignDataWrapperExtended and states that passing the FDW_MISSING_OK flag causes NULL to be returned instead of an error for an undefined FDW, which fully answers the question."
   },
   {
-    "question": "Where can I find the list of SQL commands that can be used in embedded SQL?",
-    "expected_answer": "You can find the SQL commands specific to embedded SQL in section 36.14 Embedded SQL Commands, and for other SQL commands usable in embedded SQL, refer to the SQL Commands section at sql-commands.html.",
-    "source_chunk_id": "ecpg-sql-commands.html_0",
+    "question": "Who are the authors and contributors listed for this section and where are they based?",
+    "expected_answer": "The authors are Oleg Bartunov (oleg@sai.msu.su) from Moscow University, Russia, and Teodor Sigaev (teodor@sigaev.ru) from Delta-Soft Ltd., Moscow, Russia. Additional enhancements were provided by Andrew Gierth (andrew@tao11.riddles.org.uk) in the United Kingdom.",
+    "source_chunk_id": "hstore.html_17",
     "acceptable_chunk_ids": [
-      "ecpg-sql-commands.html_0"
+      "hstore.html_16",
+      "hstore.html_17"
     ],
-    "source_chunk_content": "## 36.14. Embedded SQL Commands \n\nThis section describes all SQL commands that are specific to\nembedded SQL. Also refer to the SQL commands listed\nin [SQL Commands](sql-commands.html \"SQL Commands\"), which can also be used in\nembedded SQL, unless stated otherwise.",
-    "source_file": "ecpg-sql-commands.html",
-    "source_title": "36.14. Embedded SQL Commands",
-    "source_url": "https://www.postgresql.org/docs/16/ecpg-sql-commands.html",
-    "token_count": 60,
+    "source_chunk_content": "### F.18.8. Authors \n\nOleg Bartunov `<oleg@sai.msu.su>`, Moscow, Moscow University, Russia\n\nTeodor Sigaev `<teodor@sigaev.ru>`, Moscow, Delta-Soft Ltd., Russia\n\nAdditional enhancements by Andrew Gierth `<andrew@tao11.riddles.org.uk>`,\nUnited Kingdom",
+    "source_file": "hstore.html",
+    "source_title": "F.18. hstore — hstore key/value datatype",
+    "source_url": "https://www.postgresql.org/docs/16/hstore.html",
+    "token_count": 78,
     "_valid": true,
-    "_validation_reason": "The excerpt explicitly states that SQL commands specific to embedded SQL are in section 36.14 and that other SQL commands usable in embedded SQL are listed in the SQL Commands section at sql-commands.html."
+    "_validation_reason": "The excerpt explicitly lists the three individuals with their affiliations and locations, which matches the answer provided."
   },
   {
-    "question": "how does jsonb_set_lax handle null new_value with different null_value_treatment options?",
-    "expected_answer": "When new_value is null, jsonb_set_lax behaves according to the null_value_treatment parameter, which can be 'raise_exception', 'use_json_null' (default), 'delete_key', or 'return_target'. For example, using 'use_json_null' replaces the key with a JSON null, while 'return_target' leaves the target unchanged.",
-    "source_chunk_id": "functions-json.html_27",
+    "question": "How can I have a trigger initialize a counter column to 0 on insert and increment it on every update?",
+    "expected_answer": "Define a trigger function like trigfunc_modcount that on INSERT sets NEW(<arg>) to 0 and on UPDATE copies OLD(<arg>) to NEW(<arg>) then increments it; create the trigger for the table and pass the column name as the trigger argument, e.g. EXECUTE FUNCTION trigfunc_modcount('modcnt').",
+    "source_chunk_id": "pltcl-trigger.html_3",
     "acceptable_chunk_ids": [
-      "functions-json.html_26",
-      "functions-json.html_27",
-      "functions-json.html_28"
+      "pltcl-trigger.html_2",
+      "pltcl-trigger.html_3"
     ],
-    "source_chunk_content": "| `jsonb_set_lax` ( *`target`* `jsonb`, *`path`* `text[]`, *`new_value`* `jsonb` [, *`create_if_missing`* `boolean` [, *`null_value_treatment`* `text` ]] ) → `jsonb`  If *`new_value`* is not `NULL`, behaves identically to `jsonb_set`. Otherwise behaves according to the value of *`null_value_treatment`* which must be one of `'raise_exception'`, `'use_json_null'`, `'delete_key'`, or `'return_target'`. The default is `'use_json_null'`.  `jsonb_set_lax('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', null)` → `[{\"f1\": null, \"f2\": null}, 2, null, 3]`  `jsonb_set_lax('[{\"f1\":99,\"f2\":null},2]', '{0,f3}', null, true, 'return_target')` → `[{\"f1\": 99, \"f2\": null}, 2]` |",
-    "source_file": "functions-json.html",
-    "source_title": "9.16. JSON Functions and Operators",
-    "source_url": "https://www.postgresql.org/docs/16/functions-json.html",
-    "token_count": 249,
+    "source_chunk_content": "Here's a little example trigger function that forces an integer value\nin a table to keep track of the number of updates that are performed on the\nrow. For new rows inserted, the value is initialized to 0 and then\nincremented on every update operation.\n\n```sql\nCREATE FUNCTION trigfunc_modcount() RETURNS trigger AS $$\n switch $TG_op {\n INSERT {\n set NEW($1) 0\n }\n UPDATE {\n set NEW($1) $OLD($1)\n incr NEW($1)\n }\n default {\n return OK\n }\n }\n return [array get NEW]\n$$ LANGUAGE pltcl;\n\nCREATE TABLE mytab (num integer, description text, modcnt integer);\n\nCREATE TRIGGER trig_mytab_modcount BEFORE INSERT OR UPDATE ON mytab\n FOR EACH ROW EXECUTE FUNCTION trigfunc_modcount('modcnt');\n```\n\nNotice that the trigger function itself does not know the column\nname; that's supplied from the trigger arguments. This lets the\ntrigger function be reused with different tables.",
+    "source_file": "pltcl-trigger.html",
+    "source_title": "44.6. Trigger Functions in PL/Tcl",
+    "source_url": "https://www.postgresql.org/docs/16/pltcl-trigger.html",
+    "token_count": 202,
     "_valid": true,
-    "_validation_reason": "The excerpt explicitly describes the behavior of jsonb_set_lax with null new_value and details the possible null_value_treatment options and their effects."
+    "_validation_reason": "The excerpt includes the complete trigger function example and trigger creation that initializes the column to 0 on INSERT and copies/increments it on UPDATE, so no outside information is needed."
   },
   {
-    "question": "how can i tell what query a postgres backend process is running using ps?",
-    "expected_answer": "You can use the ps command to see individual postgres server processes and their command lines, which include the user, database, client host, and current activity. The activity part may show the current SQL command (like SELECT) or states such as 'idle', 'idle in transaction', or 'waiting' if the process is blocked.",
-    "source_chunk_id": "monitoring-ps.html_0",
+    "question": "How can I drop a NOT NULL constraint from a column?",
+    "expected_answer": "Use ALTER TABLE with ALTER COLUMN and DROP NOT NULL. For example: ALTER TABLE products ALTER COLUMN product_no DROP NOT NULL; not-null constraints have no names, so you must use this syntax.",
+    "source_chunk_id": "ddl-alter.html_5",
     "acceptable_chunk_ids": [
-      "monitoring-ps.html_0",
-      "monitoring-ps.html_1"
+      "ddl-alter.html_4",
+      "ddl-alter.html_5",
+      "ddl-alter.html_6"
     ],
-    "source_chunk_content": "## 28.1. Standard Unix Tools \n\nOn most Unix platforms, PostgreSQL modifies its\ncommand title as reported by `ps`, so that individual server\nprocesses can readily be identified. A sample display is\n\n```sql\n$ ps auxww | grep ^postgres\npostgres  15551  0.0  0.1  57536  7132 pts/0    S    18:02   0:00 postgres -i\npostgres  15554  0.0  0.0  57536  1184 ?        Ss   18:02   0:00 postgres: background writer\npostgres  15555  0.0  0.0  57536   916 ?        Ss   18:02   0:00 postgres: checkpointer\npostgres  15556  0.0  0.0  57536   916 ?        Ss   18:02   0:00 postgres: walwriter\npostgres  15557  0.0  0.0  58504  2244 ?        Ss   18:02   0:00 postgres: autovacuum launcher\npostgres  15582  0.0  0.0  58772  3080 ?        Ss   18:04   0:00 postgres: joe runbug 127.0.0.1 idle\npostgres  15606  0.0  0.0  58772  3052 ?        Ss   18:07   0:00 postgres: tgl regression [local] SELECT waiting\npostgres  15610  0.0  0.0  58772  3056 ?        Ss   18:07   0:00 postgres: tgl regression [local] idle in transaction\n```\n\n(The appropriate invocation of `ps` varies across different\nplatforms, as do the details of what is shown. This example is from a\nrecent Linux system.) The first process listed here is the\nprimary server process. The command arguments\nshown for it are the same ones used when it was launched. The next four\nprocesses are background worker processes automatically launched by the\nprimary process. (The “autovacuum launcher” process will not\nbe present if you have set the system not to run autovacuum.)\nEach of the remaining\nprocesses is a server process handling one client connection. Each such\nprocess sets its command line display in the form\n\n```sql\npostgres: user database host activity\n```\n\nThe user, database, and (client) host items remain the same for\nthe life of the client connection, but the activity indicator changes.\nThe activity can be `idle` (i.e., waiting for a client command),\n`idle in transaction` (waiting for client inside a `BEGIN` block),\nor a command type name such as `SELECT`. Also,\n`waiting` is appended if the server process is presently waiting\non a lock held by another session. In the above example we can infer\nthat process 15606 is waiting for process 15610 to complete its transaction\nand thereby release some lock. (Process 15610 must be the blocker, because\nthere is no other active session. In more complicated cases it would be\nnecessary to look into the\n[`pg_locks`](view-pg-locks.html \"54.12. pg_locks\")\nsystem view to determine who is blocking whom.)",
-    "source_file": "monitoring-ps.html",
-    "source_title": "28.1. Standard Unix Tools",
-    "source_url": "https://www.postgresql.org/docs/16/monitoring-ps.html",
-    "token_count": 758,
+    "source_chunk_content": "### 5.6.4. Removing a Constraint \n\nTo remove a constraint you need to know its name. If you gave it\na name then that's easy. Otherwise the system assigned a\ngenerated name, which you need to find out. The\npsql command `\\d\ntablename` can be helpful\nhere; other interfaces might also provide a way to inspect table\ndetails. Then the command is:\n\n```sql\nALTER TABLE products DROP CONSTRAINT some_name;\n```\n\nAs with dropping a column, you need to add `CASCADE` if you\nwant to drop a constraint that something else depends on. An example\nis that a foreign key constraint depends on a unique or primary key\nconstraint on the referenced column(s).\n\nThis works the same for all constraint types except not-null\nconstraints. To drop a not null constraint use:\n\n```sql\nALTER TABLE products ALTER COLUMN product_no DROP NOT NULL;\n```\n\n(Recall that not-null constraints do not have names.)",
+    "source_file": "ddl-alter.html",
+    "source_title": "5.6. Modifying Tables",
+    "source_url": "https://www.postgresql.org/docs/16/ddl-alter.html",
+    "token_count": 200,
     "_valid": true,
-    "_validation_reason": "The excerpt explains that the ps command shows postgres backend processes with command lines indicating the current activity, including the SQL query type such as SELECT, or states like idle and waiting, allowing identification of what query a process is running."
+    "_validation_reason": "The excerpt explicitly shows the exact SQL syntax (ALTER TABLE ... ALTER COLUMN ... DROP NOT NULL) and notes not-null constraints have no names, so it contains all needed information."
   },
   {
-    "question": "how do i create and register a custom WAL resource manager in postgres?",
-    "expected_answer": "To create a custom WAL resource manager, define an RmgrData structure implementing the required resource manager methods as shown in the postgres source files src/backend/access/transam/README and src/include/access/xlog_internal.h. Then register your resource manager with a unique RmgrId by calling RegisterCustomRmgr(rmid, &rmgr). During development, you can use RM_EXPERIMENTAL_ID before reserving a permanent ID.",
-    "source_chunk_id": "custom-rmgr.html_0",
+    "question": "Can I remove a value from an existing enum type or change the order of its values?",
+    "expected_answer": "No — existing enum values cannot be removed and their sort ordering cannot be changed. You can add or rename values (using ALTER TYPE), but to remove values or alter the ordering you must drop and re-create the enum type.",
+    "source_chunk_id": "datatype-enum.html_4",
     "acceptable_chunk_ids": [
-      "custom-rmgr.html_0",
-      "custom-rmgr.html_1"
+      "datatype-enum.html_3",
+      "datatype-enum.html_4"
     ],
-    "source_chunk_content": "## Chapter 66. Custom WAL Resource Managers\n\nThis chapter explains the interface between the core\nPostgreSQL system and custom WAL resource\nmanagers, which enable extensions to integrate directly with the [WAL](wal.html \"Chapter 30. Reliability and the Write-Ahead Log\").\n\nAn extension, especially a [Table Access\nMethod](tableam.html \"Chapter 63. Table Access Method Interface Definition\") or [Index Access Method](indexam.html \"Chapter 64. Index Access Method Interface Definition\"), may\nneed to use WAL for recovery, replication, and/or [Logical Decoding](logicaldecoding.html \"Chapter 49. Logical Decoding\"). Custom resource managers\nare a more flexible alternative to [Generic\nWAL](generic-wal.html \"Chapter 65. Generic WAL Records\") (which does not support logical decoding), but more complex for\nan extension to implement.\n\nTo create a new custom WAL resource manager, first define an\n`RmgrData` structure with implementations for the\nresource manager methods. Refer to\n`src/backend/access/transam/README` and\n`src/include/access/xlog_internal.h` in the\nPostgreSQL source.\n\n```sql\n/*\n * Method table for resource managers.\n *\n * This struct must be kept in sync with the PG_RMGR definition in\n * rmgr.c.\n *\n * rm_identify must return a name for the record based on xl_info (without\n * reference to the rmid). For example, XLOG_BTREE_VACUUM would be named\n * \"VACUUM\". rm_desc can then be called to obtain additional detail for the\n * record, if available (e.g. the last block).\n *\n * rm_mask takes as input a page modified by the resource manager and masks\n * out bits that shouldn't be flagged by wal_consistency_checking.\n *\n * RmgrTable[] is indexed by RmgrId values (see rmgrlist.h). If rm_name is\n * NULL, the corresponding RmgrTable entry is considered invalid.\n */\ntypedef struct RmgrData\n{\n    const char *rm_name;\n    void        (*rm_redo) (XLogReaderState *record);\n    void        (*rm_desc) (StringInfo buf, XLogReaderState *record);\n    const char *(*rm_identify) (uint8 info);\n    void        (*rm_startup) (void);\n    void        (*rm_cleanup) (void);\n    void        (*rm_mask) (char *pagedata, BlockNumber blkno);\n    void        (*rm_decode) (struct LogicalDecodingContext *ctx,\n                              struct XLogRecordBuffer *buf);\n} RmgrData;\n```\n\nThe `src/test/modules/test_custom_rmgrs` module\ncontains a working example, which demonstrates usage of custom WAL\nresource managers.\n\nThen, register your new resource\nmanager.\n\n```sql\n/*\n * Register a new custom WAL resource manager.\n *\n * Resource manager IDs must be globally unique across all extensions. Refer\n * to https://wiki.postgresql.org/wiki/CustomWALResourceManagers to reserve a\n * unique RmgrId for your extension, to avoid conflicts with other extension\n * developers. During development, use RM_EXPERIMENTAL_ID to avoid needlessly\n * reserving a new ID.\n */\nextern void RegisterCustomRmgr(RmgrId rmid, const RmgrData *rmgr);\n```",
-    "source_file": "custom-rmgr.html",
-    "source_title": "Chapter 66. Custom WAL Resource Managers",
-    "source_url": "https://www.postgresql.org/docs/16/custom-rmgr.html",
-    "token_count": 703,
+    "source_chunk_content": "### 8.7.4. Implementation Details \n\nEnum labels are case sensitive, so\n`'happy'` is not the same as `'HAPPY'`.\nWhite space in the labels is significant too.\n\nAlthough enum types are primarily intended for static sets of values,\nthere is support for adding new values to an existing enum type, and for\nrenaming values (see [ALTER TYPE](sql-altertype.html \"ALTER TYPE\")). Existing values\ncannot be removed from an enum type, nor can the sort ordering of such\nvalues be changed, short of dropping and re-creating the enum type.\n\nAn enum value occupies four bytes on disk. The length of an enum\nvalue's textual label is limited by the `NAMEDATALEN`\nsetting compiled into PostgreSQL; in standard\nbuilds this means at most 63 bytes.\n\nThe translations from internal enum values to textual labels are\nkept in the system catalog\n[`pg_enum`](catalog-pg-enum.html \"53.20. pg_enum\").\nQuerying this catalog directly can be useful.",
+    "source_file": "datatype-enum.html",
+    "source_title": "8.7. Enumerated Types",
+    "source_url": "https://www.postgresql.org/docs/16/datatype-enum.html",
+    "token_count": 217,
     "_valid": true,
-    "_validation_reason": "The excerpt provides detailed instructions on defining an RmgrData structure with implementations for resource manager methods and registering it using RegisterCustomRmgr, including guidance on RmgrId usage."
+    "_validation_reason": "The excerpt explicitly states you cannot remove existing enum values or change their sort ordering (except by dropping and re-creating the enum) and it mentions adding/renaming via ALTER TYPE, so the answer is fully supported."
   },
   {
-    "question": "What files do I need to create after calling pg_backup_stop and how should I write them?",
-    "expected_answer": "After calling pg_backup_stop, you must write the second returned value to a file named backup_label and the third returned value, if not empty, to a file named tablespace_map in the backup root directory. These files must be written exactly as-is, potentially requiring binary mode file writing.",
-    "source_chunk_id": "continuous-archiving.html_17",
+    "question": "After the rule system finishes rewriting, what SQL statements does it produce?",
+    "expected_answer": "It produces two statements: an INSERT INTO shoelace_log SELECT that logs s.sl_name, s.sl_avail + shoelace_arrive.arr_quant, current_user, current_timestamp from shoelace_arrive and shoelace_data where names match and availability changed; and an UPDATE shoelace_data that increases sl_avail by shoelace_arrive.arr_quant using shoelace_arrive and shoelace_data joined on matching names.",
+    "source_chunk_id": "rules-update.html_7",
     "acceptable_chunk_ids": [
-      "continuous-archiving.html_16",
-      "continuous-archiving.html_17",
-      "continuous-archiving.html_18"
+      "rules-update.html_6",
+      "rules-update.html_7",
+      "rules-update.html_8"
     ],
-    "source_chunk_content": "`pg_backup_stop` will return one row with three\n   values. The second of these fields should be written to a file named\n   `backup_label` in the root directory of the backup. The\n   third field should be written to a file named\n   `tablespace_map` unless the field is empty. These files are\n   vital to the backup working and must be written byte for byte without\n   modification, which may require opening the file in binary mode.\n5. Once the WAL segment files active during the backup are archived, you are\n   done. The file identified by `pg_backup_stop`'s first return\n   value is the last segment that is required to form a complete set of\n   backup files. On a primary, if `archive_mode` is enabled and the\n   `wait_for_archive` parameter is `true`,\n   `pg_backup_stop` does not return until the last segment has\n   been archived.\n   On a standby, `archive_mode` must be `always` in order\n   for `pg_backup_stop` to wait.\n   Archiving of these files happens automatically since you have\n   already configured `archive_command` or `archive_library`.\n   In most cases this happens quickly, but you are advised to monitor your\n   archive system to ensure there are no delays.\n   If the archive process has fallen behind because of failures of the\n   archive command or library, it will keep retrying\n   until the archive succeeds and the backup is complete.\n   If you wish to place a time limit on the execution of\n   `pg_backup_stop`, set an appropriate\n   `statement_timeout` value, but make note that if\n   `pg_backup_stop` terminates because of this your backup\n   may not be valid.",
-    "source_file": "continuous-archiving.html",
-    "source_title": "26.3. Continuous Archiving and Point-in-Time Recovery (PITR)",
-    "source_url": "https://www.postgresql.org/docs/16/continuous-archiving.html",
-    "token_count": 366,
+    "source_chunk_content": "Now the first rule `shoelace_ok_ins` is applied and turns this\ninto:\n\n```sql\nUPDATE shoelace\n SET sl_avail = shoelace.sl_avail + shoelace_arrive.arr_quant\n FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,\n shoelace_ok old, shoelace_ok new,\n shoelace shoelace\n WHERE shoelace.sl_name = shoelace_arrive.arr_name;\n```\n\nand throws away the original `INSERT` on\n`shoelace_ok`. This rewritten query is passed to\nthe rule system again, and the second applied rule\n`shoelace_upd` produces:\n\n```sql\nUPDATE shoelace_data\n SET sl_name = shoelace.sl_name,\n sl_avail = shoelace.sl_avail + shoelace_arrive.arr_quant,\n sl_color = shoelace.sl_color,\n sl_len = shoelace.sl_len,\n sl_unit = shoelace.sl_unit\n FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,\n shoelace_ok old, shoelace_ok new,\n shoelace shoelace, shoelace old,\n shoelace new, shoelace_data shoelace_data\n WHERE shoelace.sl_name = shoelace_arrive.arr_name\n AND shoelace_data.sl_name = shoelace.sl_name;\n```\n\nAgain it's an `INSTEAD` rule and the previous query tree is trashed.\nNote that this query still uses the view `shoelace`.\nBut the rule system isn't finished with this step, so it continues\nand applies the `_RETURN` rule on it, and we get:\n\n```sql\nUPDATE shoelace_data\n SET sl_name = s.sl_name,\n sl_avail = s.sl_avail + shoelace_arrive.arr_quant,\n sl_color = s.sl_color,\n sl_len = s.sl_len,\n sl_unit = s.sl_unit\n FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,\n shoelace_ok old, shoelace_ok new,\n shoelace shoelace, shoelace old,\n shoelace new, shoelace_data shoelace_data,\n shoelace old, shoelace new,\n shoelace_data s, unit u\n WHERE s.sl_name = shoelace_arrive.arr_name\n AND shoelace_data.sl_name = s.sl_name;\n```\n\nFinally, the rule `log_shoelace` gets applied,\nproducing the extra query tree:\n\n```sql\nINSERT INTO shoelace_log\nSELECT s.sl_name,\n s.sl_avail + shoelace_arrive.arr_quant,\n current_user,\n current_timestamp\n FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,\n shoelace_ok old, shoelace_ok new,\n shoelace shoelace, shoelace old,\n shoelace new, shoelace_data shoelace_data,\n shoelace old, shoelace new,\n shoelace_data s, unit u,\n shoelace_data old, shoelace_data new\n shoelace_log shoelace_log\n WHERE s.sl_name = shoelace_arrive.arr_name\n AND shoelace_data.sl_name = s.sl_name\n AND (s.sl_avail + shoelace_arrive.arr_quant) <> s.sl_avail;\n```\n\nAfter that the rule system runs out of rules and returns the\ngenerated query trees.\n\nSo we end up with two final query trees that are equivalent to the\nSQL statements:\n\n```sql\nINSERT INTO shoelace_log\nSELECT s.sl_name,\n s.sl_avail + shoelace_arrive.arr_quant,\n current_user,\n current_timestamp\n FROM shoelace_arrive shoelace_arrive, shoelace_data shoelace_data,\n shoelace_data s\n WHERE s.sl_name = shoelace_arrive.arr_name\n AND shoelace_data.sl_name = s.sl_name\n AND s.sl_avail + shoelace_arrive.arr_quant <> s.sl_avail;\n\nUPDATE shoelace_data\n SET sl_avail = shoelace_data.sl_avail + shoelace_arrive.arr_quant\n FROM shoelace_arrive shoelace_arrive,\n shoelace_data shoelace_data,\n shoelace_data s\n WHERE s.sl_name = shoelace_arrive.sl_name\n AND shoelace_data.sl_name = s.sl_name;\n```\n\nThe result is that data coming from one relation inserted into another,\nchanged into updates on a third, changed into updating\na fourth plus logging that final update in a fifth\ngets reduced into two queries.\n\nThere is a little detail that's a bit ugly. Looking at the two\nqueries, it turns out that the `shoelace_data`\nrelation appears twice in the range table where it could\ndefinitely be reduced to one. The planner does not handle it and\nso the execution plan for the rule systems output of the\n`INSERT` will be\n\n```sql\nNested Loop\n -> Merge Join\n -> Seq Scan\n -> Sort\n -> Seq Scan on s\n -> Seq Scan\n -> Sort\n -> Seq Scan on shoelace_arrive\n -> Seq Scan on shoelace_data\n```\n\nwhile omitting the extra range table entry would result in a\n\n```sql\nMerge Join\n -> Seq Scan\n -> Sort\n -> Seq Scan on s\n -> Seq Scan\n -> Sort\n -> Seq Scan on shoelace_arrive\n```",
+    "source_file": "rules-update.html",
+    "source_title": "41.4. Rules on INSERT, UPDATE, and DELETE",
+    "source_url": "https://www.postgresql.org/docs/16/rules-update.html",
+    "token_count": 1151,
     "_valid": true,
-    "_validation_reason": "The excerpt clearly states that the second returned value should be written to 'backup_label' and the third to 'tablespace_map' if not empty, and emphasizes that they must be written byte for byte without modification, potentially requiring binary mode."
+    "_validation_reason": "The excerpt explicitly shows the two final SQL statements (the INSERT INTO shoelace_log ... SELECT ... and the UPDATE shoelace_data ... SET sl_avail = ...), so the question can be answered fully from it."
+  },
+  {
+    "question": "How do I write the special numeric values Infinity, -Infinity and NaN in an SQL command?",
+    "expected_answer": "You must put quotes around them (for example UPDATE table SET x = '-Infinity'); the strings are recognized case-insensitively and the infinity values may alternatively be written as inf and -inf. Note that Infinity can only be stored in an unconstrained numeric column.",
+    "source_chunk_id": "datatype-numeric.html_4",
+    "acceptable_chunk_ids": [
+      "datatype-numeric.html_3",
+      "datatype-numeric.html_4",
+      "datatype-numeric.html_5"
+    ],
+    "source_chunk_content": "Numeric values are physically stored without any extra leading or\ntrailing zeroes. Thus, the declared precision and scale of a column\nare maximums, not fixed allocations. (In this sense the `numeric`\ntype is more akin to `varchar(n)`\nthan to `char(n)`.) The actual storage\nrequirement is two bytes for each group of four decimal digits,\nplus three to eight bytes overhead.\n\nIn addition to ordinary numeric values, the `numeric` type\nhas several special values:\n\n\\\n`Infinity`\\\n`-Infinity`\\\n`NaN`\\\n\nThese are adapted from the IEEE 754 standard, and represent\n“infinity”, “negative infinity”, and\n“not-a-number”, respectively. When writing these values\nas constants in an SQL command, you must put quotes around them,\nfor example `UPDATE table SET x = '-Infinity'`.\nOn input, these strings are recognized in a case-insensitive manner.\nThe infinity values can alternatively be spelled `inf`\nand `-inf`.\n\nThe infinity values behave as per mathematical expectations. For\nexample, `Infinity` plus any finite value equals\n`Infinity`, as does `Infinity`\nplus `Infinity`; but `Infinity`\nminus `Infinity` yields `NaN` (not a\nnumber), because it has no well-defined interpretation. Note that an\ninfinity can only be stored in an unconstrained `numeric`\ncolumn, because it notionally exceeds any finite precision limit.\n\nThe `NaN` (not a number) value is used to represent\nundefined calculational results. In general, any operation with\na `NaN` input yields another `NaN`.\nThe only exception is when the operation's other inputs are such that\nthe same output would be obtained if the `NaN` were to\nbe replaced by any finite or infinite numeric value; then, that output\nvalue is used for `NaN` too. (An example of this\nprinciple is that `NaN` raised to the zero power\nyields one.)\n\n### Note\n\nIn most implementations of the “not-a-number” concept,\n`NaN` is not considered equal to any other numeric\nvalue (including `NaN`). In order to allow\n`numeric` values to be sorted and used in tree-based\nindexes, PostgreSQL treats `NaN`\nvalues as equal, and greater than all non-`NaN`\nvalues.",
+    "source_file": "datatype-numeric.html",
+    "source_title": "8.1. Numeric Types",
+    "source_url": "https://www.postgresql.org/docs/16/datatype-numeric.html",
+    "token_count": 475,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states you must put quotes around these values (e.g., '-Infinity'), that the strings are recognized case-insensitively, that Infinity can be written as inf/-inf, and notes Infinity requires an unconstrained numeric column."
+  },
+  {
+    "question": "What can go wrong if I use LIMIT and OFFSET without an ORDER BY?",
+    "expected_answer": "Without ORDER BY the subset returned by LIMIT/OFFSET is unpredictable because SQL doesn't guarantee row order, so you may get different rows for different LIMIT/OFFSET values. Also the planner may choose different plans for different LIMIT/OFFSET settings, and a large OFFSET can be inefficient because skipped rows still must be computed.",
+    "source_chunk_id": "queries-limit.html_1",
+    "acceptable_chunk_ids": [
+      "queries-limit.html_0",
+      "queries-limit.html_1"
+    ],
+    "source_chunk_content": "When using `LIMIT`, it is important to use an\n`ORDER BY` clause that constrains the result rows into a\nunique order. Otherwise you will get an unpredictable subset of\nthe query's rows. You might be asking for the tenth through\ntwentieth rows, but tenth through twentieth in what ordering? The\nordering is unknown, unless you specified `ORDER BY`.\n\nThe query optimizer takes `LIMIT` into account when\ngenerating query plans, so you are very likely to get different\nplans (yielding different row orders) depending on what you give\nfor `LIMIT` and `OFFSET`. Thus, using\ndifferent `LIMIT`/`OFFSET` values to select\ndifferent subsets of a query result *will give\ninconsistent results* unless you enforce a predictable\nresult ordering with `ORDER BY`. This is not a bug; it\nis an inherent consequence of the fact that SQL does not promise to\ndeliver the results of a query in any particular order unless\n`ORDER BY` is used to constrain the order.\n\nThe rows skipped by an `OFFSET` clause still have to be\ncomputed inside the server; therefore a large `OFFSET`\nmight be inefficient.",
+    "source_file": "queries-limit.html",
+    "source_title": "7.6. LIMIT and OFFSET",
+    "source_url": "https://www.postgresql.org/docs/16/queries-limit.html",
+    "token_count": 241,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states that without ORDER BY the row subset is unpredictable, different LIMIT/OFFSET values can yield inconsistent results due to planner choices, and large OFFSETs are inefficient because skipped rows must still be computed."
+  },
+  {
+    "question": "If I send several SQL statements together in one simple Query message and one of them errors, will the earlier statements be kept or rolled back?",
+    "expected_answer": "They run in a single implicit transaction block, so if one statement errors the earlier statements in that message are rolled back unless you used explicit transaction control (e.g. BEGIN/COMMIT) to commit some statements before the failing one.",
+    "source_chunk_id": "protocol-flow.html_9",
+    "acceptable_chunk_ids": [
+      "protocol-flow.html_8",
+      "protocol-flow.html_9",
+      "protocol-flow.html_10"
+    ],
+    "source_chunk_content": "#### 55.2.2.1. Multiple Statements in a Simple Query \n\nWhen a simple Query message contains more than one SQL statement\n(separated by semicolons), those statements are executed as a single\ntransaction, unless explicit transaction control commands are included\nto force a different behavior. For example, if the message contains\n\n```sql\nINSERT INTO mytable VALUES(1);\nSELECT 1/0;\nINSERT INTO mytable VALUES(2);\n```\n\nthen the divide-by-zero failure in the `SELECT` will force\nrollback of the first `INSERT`. Furthermore, because\nexecution of the message is abandoned at the first error, the second\n`INSERT` is never attempted at all.\n\nIf instead the message contains\n\n```sql\nBEGIN;\nINSERT INTO mytable VALUES(1);\nCOMMIT;\nINSERT INTO mytable VALUES(2);\nSELECT 1/0;\n```\n\nthen the first `INSERT` is committed by the\nexplicit `COMMIT` command. The second `INSERT`\nand the `SELECT` are still treated as a single transaction,\nso that the divide-by-zero failure will roll back the\nsecond `INSERT`, but not the first one.\n\nThis behavior is implemented by running the statements in a\nmulti-statement Query message in an *implicit transaction\nblock* unless there is some explicit transaction block for them to\nrun in. The main difference between an implicit transaction block and\na regular one is that an implicit block is closed automatically at the\nend of the Query message, either by an implicit commit if there was no\nerror, or an implicit rollback if there was an error. This is similar\nto the implicit commit or rollback that happens for a statement\nexecuted by itself (when not in a transaction block).",
+    "source_file": "protocol-flow.html",
+    "source_title": "55.2. Message Flow",
+    "source_url": "https://www.postgresql.org/docs/16/protocol-flow.html",
+    "token_count": 358,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states multiple statements run in an implicit transaction and an error causes an implicit rollback of earlier statements unless explicit transaction control (BEGIN/COMMIT) was used to commit them beforehand."
+  },
+  {
+    "question": "What does PQescapeByteaConn do and what are the meanings of its parameters?",
+    "expected_answer": "PQescapeByteaConn escapes binary data for use in an SQL bytea literal (using hex or backslash escaping). Its parameters are a PGconn *conn, a pointer to the input bytes (from) and the number of input bytes (from_length), and it returns a newly allocated escaped string and stores its length (including the terminating NUL) into *to_length.",
+    "source_chunk_id": "libpq-exec.html_36",
+    "acceptable_chunk_ids": [
+      "libpq-exec.html_35",
+      "libpq-exec.html_36",
+      "libpq-exec.html_37"
+    ],
+    "source_chunk_content": "[`PQescapeString`](libpq-exec.html#LIBPQ-PQESCAPESTRING) can be used safely in\n client programs that work with only one PostgreSQL\n connection at a time (in this case it can find out what it needs to\n know “behind the scenes”). In other contexts it is a security\n hazard and should be avoided in favor of\n [`PQescapeStringConn`](libpq-exec.html#LIBPQ-PQESCAPESTRINGCONN).\n\n`PQescapeByteaConn` \n: Escapes binary data for use within an SQL command with the type\n `bytea`. As with [`PQescapeStringConn`](libpq-exec.html#LIBPQ-PQESCAPESTRINGCONN),\n this is only used when inserting data directly into an SQL command string.\n\n \n```sql\nunsigned char *PQescapeByteaConn(PGconn *conn,\n const unsigned char *from,\n size_t from_length,\n size_t *to_length);\n```\n\n Certain byte values must be escaped when used as part of a\n `bytea` literal in an SQL statement.\n [`PQescapeByteaConn`](libpq-exec.html#LIBPQ-PQESCAPEBYTEACONN) escapes bytes using\n either hex encoding or backslash escaping. See [Section 8.4](datatype-binary.html \"8.4. Binary Data Types\") for more information.\n\n The *`from`* parameter points to the first\n byte of the string that is to be escaped, and the\n *`from_length`* parameter gives the number of\n bytes in this binary string. (A terminating zero byte is\n neither necessary nor counted.) The *`to_length`*\n parameter points to a variable that will hold the resultant\n escaped string length. This result string length includes the terminating\n zero byte of the result.",
+    "source_file": "libpq-exec.html",
+    "source_title": "34.3. Command Execution Functions",
+    "source_url": "https://www.postgresql.org/docs/16/libpq-exec.html",
+    "token_count": 378,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly states the function's purpose (escaping bytea binary data, hex or backslash), shows the prototype, and describes the meanings of from, from_length, and to_length (and the result length including the terminating zero), so the question can be answered from it alone."
+  },
+  {
+    "question": "How can I set up PostgreSQL to authenticate against LDAP by username or email?",
+    "expected_answer": "Use a search+bind configuration with ldapbasedn and ldapsearchfilter, for example: ldapbasedn=\"dc=example, dc=net\" ldapsearchfilter=\"(|(uid=$username)(mail=$username))\". PostgreSQL will search under the base DN for an entry matching the filter, then attempt to bind with the found DN and the client's password to grant access.",
+    "source_chunk_id": "auth-ldap.html_5",
+    "acceptable_chunk_ids": [
+      "auth-ldap.html_4",
+      "auth-ldap.html_5"
+    ],
+    "source_chunk_content": "Here is an example for a simple-bind LDAP configuration:\n\n```sql\nhost ... ldap ldapserver=ldap.example.net ldapprefix=\"cn=\" ldapsuffix=\", dc=example, dc=net\"\n```\n\nWhen a connection to the database server as database\nuser `someuser` is requested, PostgreSQL will attempt to\nbind to the LDAP server using the DN `cn=someuser, dc=example,\ndc=net` and the password provided by the client. If that connection\nsucceeds, the database access is granted.\n\nHere is an example for a search+bind configuration:\n\n```sql\nhost ... ldap ldapserver=ldap.example.net ldapbasedn=\"dc=example, dc=net\" ldapsearchattribute=uid\n```\n\nWhen a connection to the database server as database\nuser `someuser` is requested, PostgreSQL will attempt to\nbind anonymously (since `ldapbinddn` was not specified) to\nthe LDAP server, perform a search for `(uid=someuser)`\nunder the specified base DN. If an entry is found, it will then attempt to\nbind using that found information and the password supplied by the client.\nIf that second connection succeeds, the database access is granted.\n\nHere is the same search+bind configuration written as a URL:\n\n```sql\nhost ... ldap ldapurl=\"ldap://ldap.example.net/dc=example,dc=net?uid?sub\"\n```\n\nSome other software that supports authentication against LDAP uses the\nsame URL format, so it will be easier to share the configuration.\n\nHere is an example for a search+bind configuration that uses\n`ldapsearchfilter` instead of\n`ldapsearchattribute` to allow authentication by\nuser ID or email address:\n\n```sql\nhost ... ldap ldapserver=ldap.example.net ldapbasedn=\"dc=example, dc=net\" ldapsearchfilter=\"(|(uid=$username)(mail=$username))\"\n```\n\nHere is an example for a search+bind configuration that uses DNS SRV\ndiscovery to find the host name(s) and port(s) for the LDAP service for the\ndomain name `example.net`:\n\n```sql\nhost ... ldap ldapbasedn=\"dc=example,dc=net\"\n```\n\n### Tip\n\nSince LDAP often uses commas and spaces to separate the different\nparts of a DN, it is often necessary to use double-quoted parameter\nvalues when configuring LDAP options, as shown in the examples.",
+    "source_file": "auth-ldap.html",
+    "source_title": "21.10. LDAP Authentication",
+    "source_url": "https://www.postgresql.org/docs/16/auth-ldap.html",
+    "token_count": 497,
+    "_valid": true,
+    "_validation_reason": "The excerpt explicitly shows and explains using a search+bind with ldapbasedn and ldapsearchfilter=(|(uid=$username)(mail=$username)) and describes the search-then-bind process, so it contains all needed information."
   }
 ]

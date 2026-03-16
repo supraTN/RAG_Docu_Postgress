@@ -5,41 +5,29 @@ Evaluates the RAG pipeline on two independent axes:
 
   RETRIEVAL (no LLM needed, cheap & fast)
   ─────────────────────────────────────────
-  Hit Rate @k  — % of questions where the source chunk appears in top-k results.
+  Hit Rate @k  — % of questions where an acceptable chunk appears in top-k results.
                  k=1, k=3, k=5 are reported.
-  MRR          — Mean Reciprocal Rank. Average of 1/rank of the source chunk.
+  MRR          — Mean Reciprocal Rank. Average of 1/rank of the acceptable chunk.
                  1.0 = always first. 0.0 = never found.
   Boundary Hit — % of failed retrievals where an ADJACENT chunk (same file, ±2 index)
                  was retrieved instead. High value → chunking boundary problem,
-                 not a retrieval problem.
+                 not a pure retrieval problem.
 
   GENERATION (uses RAGAS + OpenAI, has a cost)
   ─────────────────────────────────────────────
   Faithfulness      — Answer is grounded in the retrieved chunks (no hallucination).
-  Answer Relevancy  — Answer actually addresses the question.
-
-These two axes are independent:
-  - Retrieval can fail even if generation is good (found wrong chunks, lucked out).
-  - Generation can fail even if retrieval is good (LLM ignored the context).
-
-Diagnosing failures:
-  High Boundary Hit + Low Hit Rate  → chunking problem (concepts split across chunks)
-  Low Boundary Hit + Low Hit Rate   → embedding/similarity problem
-  High Hit Rate + Low Faithfulness  → LLM ignores the context (prompt issue)
-  Low Hit Rate + Low Faithfulness   → retrieval starves the LLM of good content
+  Correctness       — Answer correctly addresses the question (LLM-as-judge).
+  Completeness      — Answer covers all key points needed (LLM-as-judge).
 
 Usage:
-    python evaluate.py                                    # retrieval + generation
-    python evaluate.py --retrieval-only                   # skip RAGAS, no extra API cost
-    python evaluate.py --dataset eval_dataset.json        # custom dataset path
-    python evaluate.py --top-k 10                         # retrieve more candidates
-    python evaluate.py --limit 10                         # quick test on first 10 questions
-    python evaluate.py --skip-answer-relevancy            # faithfulness only (cheaper)
-    python evaluate.py --judge-model gpt-4.1-mini               # override the RAGAS judge model
-    python evaluate.py --output results.json              # custom output path
-
-Prerequisites:
-    Run generate_dataset.py first to create eval_dataset.json.
+    python evaluate.py
+    python evaluate.py --retrieval-only
+    python evaluate.py --dataset eval_dataset.json
+    python evaluate.py --top-k 10
+    python evaluate.py --limit 10
+    python evaluate.py --skip-correctness
+    python evaluate.py --judge-model gpt-4.1-mini
+    python evaluate.py --output results.json
 """
 
 import sys
@@ -60,7 +48,22 @@ from models import QuestionRequest
 import rag_service
 
 DEFAULT_DATASET = Path(__file__).parent / "eval_dataset.json"
-DEFAULT_OUTPUT = Path(__file__).parent / "evaluation_results.json"
+
+
+def _default_output_for_dataset(dataset_path: Path) -> Path:
+    """
+    Pick a non-overwriting output filename based on dataset name.
+    """
+    benchmark_dir = Path(__file__).parent
+    stem = dataset_path.stem.lower()
+
+    if stem == "eval_dataset":
+        return benchmark_dir / "evaluation_results_technique.json"
+    if "userstyle" in stem:
+        return benchmark_dir / "evaluation_results_userstyle.json"
+
+    safe_stem = "".join(ch if ch.isalnum() else "_" for ch in stem).strip("_")
+    return benchmark_dir / f"evaluation_results_{safe_stem}.json"
 
 
 def _parse_chunk_index(chunk_id: str) -> tuple[str, int] | tuple[None, None]:
@@ -93,12 +96,8 @@ def _is_adjacent(source_id: str, retrieved_id: str, window: int = 2) -> bool:
 
 def evaluate_retrieval(dataset: list[dict], top_k: int = 5) -> dict:
     """
-    For each question, run the vector search and check whether the source chunk
+    For each question, run the vector search and check whether an acceptable chunk
     appears in the top-k results. Computes Hit Rate @1/3/5, MRR, and Boundary Hit Rate.
-
-    Boundary Hit Rate: among failed retrievals, how many retrieved an adjacent chunk
-    (same file, ±2 index)? High value → concept was split across chunk boundaries,
-    so the retriever found the right area but the wrong slice.
     """
     hits = {1: 0, 3: 0, top_k: 0}
     reciprocal_ranks = []
@@ -110,22 +109,44 @@ def evaluate_retrieval(dataset: list[dict], top_k: int = 5) -> dict:
     for i, item in enumerate(dataset):
         question = item["question"]
         source_id = item["source_chunk_id"]
+        acceptable_ids = set(item.get("acceptable_chunk_ids", [source_id]))
 
-        # Retrieve candidates (4× top_k if reranker enabled) then rerank
         fetch_k = top_k * 4 if rag_service.RERANKER_ENABLED else top_k
-        docs_and_scores = rag_service.vectorstore.similarity_search_with_relevance_scores(
+        raw_docs_and_scores = rag_service.vectorstore.similarity_search_with_relevance_scores(
             question, fetch_k
         )
+        raw_retrieved_ids = [doc.metadata.get("id", "") for doc, _ in raw_docs_and_scores]
+        raw_retrieved_scores = [round(score, 4) for _, score in raw_docs_and_scores]
+
+        raw_rank = 0
+        for pos, doc_id in enumerate(raw_retrieved_ids, start=1):
+            if doc_id in acceptable_ids:
+                raw_rank = pos
+                break
+
+        rerank_rank = None
+        docs_and_scores = raw_docs_and_scores
         if rag_service.RERANKER_ENABLED:
-            docs_and_scores = rag_service.rerank_docs(question, docs_and_scores)[:top_k]
+            reranked_docs_and_scores = rag_service.rerank_docs(question, raw_docs_and_scores)
+            reranked_ids = [doc.metadata.get("id", "") for doc, _ in reranked_docs_and_scores]
+
+            rerank_rank = 0
+            for pos, doc_id in enumerate(reranked_ids, start=1):
+                if doc_id in acceptable_ids:
+                    rerank_rank = pos
+                    break
+
+            docs_and_scores = reranked_docs_and_scores[:top_k]
 
         retrieved_ids = [doc.metadata.get("id", "") for doc, _ in docs_and_scores]
         retrieved_scores = [round(score, 4) for _, score in docs_and_scores]
 
         rank = 0
+        matched_chunk_id = None
         for pos, doc_id in enumerate(retrieved_ids, start=1):
-            if doc_id == source_id:
+            if doc_id in acceptable_ids:
                 rank = pos
+                matched_chunk_id = doc_id
                 break
 
         found = rank > 0
@@ -146,10 +167,16 @@ def evaluate_retrieval(dataset: list[dict], top_k: int = 5) -> dict:
         details.append({
             "question": question,
             "source_chunk_id": source_id,
+            "acceptable_chunk_ids": sorted(acceptable_ids),
+            "matched_chunk_id": matched_chunk_id,
             "source_file": item["source_file"],
+            "raw_rank": raw_rank,
+            "rerank_rank": rerank_rank,
             "rank": rank,
             "found_in_top_k": found,
             "boundary_hit": boundary_hit,
+            "raw_top_retrieved_ids": raw_retrieved_ids[:3],
+            "raw_top_scores": raw_retrieved_scores[:3],
             "top_retrieved_ids": retrieved_ids[:3],
             "top_scores": retrieved_scores[:3],
         })
@@ -157,9 +184,9 @@ def evaluate_retrieval(dataset: list[dict], top_k: int = 5) -> dict:
         if found:
             status = f"rank {rank:<2}"
         elif boundary_hit:
-            status = f"BOUNDARY HIT"
+            status = "BOUNDARY HIT"
         else:
-            status = f"MISS        "
+            status = "MISS        "
 
         print(f"  [{i + 1:>2}/{total}] {status}  {question[:60]}...")
 
@@ -178,86 +205,140 @@ def evaluate_retrieval(dataset: list[dict], top_k: int = 5) -> dict:
     }
 
 
+CORRECTNESS_PROMPT = """\
+You are an impartial judge evaluating a RAG system that answers PostgreSQL documentation questions.
+
+Given a **question** and an **answer**, rate the answer on two criteria:
+
+1. **Correctness** (0.0–1.0): Does the answer correctly address what the user asked?
+   - 1.0 = fully correct and complete answer to the question
+   - 0.7 = mostly correct, minor inaccuracy or missing a small part
+   - 0.4 = partially correct but missing important parts
+   - 0.0 = wrong or does not answer the question at all
+
+2. **Completeness** (0.0–1.0): Does the answer cover the key points needed?
+   - 1.0 = covers everything the user needs to know
+   - 0.7 = covers the main point but misses secondary details
+   - 0.4 = covers only part of what was asked
+   - 0.0 = does not cover the question at all
+
+IMPORTANT: Do NOT penalize for extra useful context beyond what was asked.
+A thorough answer that adds relevant details is just as good as a concise one.
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{"correctness": <float>, "completeness": <float>}
+"""
+
+
+def _judge_answer(client, model: str, question: str, answer: str) -> dict:
+    """Score a single QA pair using LLM-as-judge. Returns {"correctness": float, "completeness": float}."""
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": CORRECTNESS_PROMPT},
+            {"role": "user", "content": f"**Question:** {question}\n\n**Answer:** {answer}"},
+        ],
+        temperature=0,
+        max_tokens=100,
+    )
+    import re
+    text = resp.choices[0].message.content.strip()
+    match = re.search(r'\{[^}]+\}', text)
+    if match:
+        return json.loads(match.group())
+    return {"correctness": 0.0, "completeness": 0.0}
+
+
 def evaluate_generation(
     dataset: list[dict],
     judge_model: str,
-    skip_answer_relevancy: bool = False,
+    skip_correctness: bool = False,
 ) -> dict:
     """
     Run the full RAG pipeline on each question, collect (answer, contexts),
-    then score with RAGAS faithfulness and answer relevancy.
+    then score with RAGAS faithfulness and LLM-as-judge correctness/completeness.
     """
-    questions, answers, contexts = [], [], []
+    questions, answers, contexts, qa_pairs = [], [], [], []
 
     total = len(dataset)
     for i, item in enumerate(dataset):
         question = item["question"]
         req = QuestionRequest(message=question)
 
-        docs_and_scores = rag_service.get_embedding_score(req)
-        valid_docs, _ = rag_service._select_valid_docs_and_sources(docs_and_scores)
+        docs_and_scores, is_reranked = rag_service.get_embedding_score(req)
+        valid_docs, _ = rag_service._select_valid_docs_and_sources(docs_and_scores, is_reranked=is_reranked)
         chunk_texts = [doc.page_content for doc in valid_docs]
-        result = rag_service.generate_answer_with_score(req, docs_and_scores=docs_and_scores)
+        result = rag_service.generate_answer_with_score(req, docs_and_scores=docs_and_scores, is_reranked=is_reranked)
 
         questions.append(question)
         answers.append(result.answer)
         contexts.append(chunk_texts if chunk_texts else ["No relevant context found."])
+        qa_pairs.append({"question": question, "answer": result.answer})
 
         print(f"  [{i + 1:>2}/{total}] {len(chunk_texts)} chunk(s) retrieved  {question[:60]}...")
 
-    from openai import AsyncOpenAI
-    from ragas.metrics.collections import Faithfulness, AnswerRelevancy
+    from openai import AsyncOpenAI, OpenAI
+    from ragas.metrics.collections import Faithfulness
     from ragas.llms import llm_factory
-    from ragas.embeddings import OpenAIEmbeddings as RagasOpenAIEmbeddings
 
-    openai_client = AsyncOpenAI(api_key=rag_service.OPENAI_API_KEY)
-    ragas_llm = llm_factory(judge_model, client=openai_client, max_tokens=4096)
-    ragas_embeddings = RagasOpenAIEmbeddings(
-        client=openai_client, model=rag_service.EMBEDDING_MODEL
-    )
+    openai_async = AsyncOpenAI(api_key=rag_service.OPENAI_API_KEY)
+    openai_sync = OpenAI(api_key=rag_service.OPENAI_API_KEY)
+    ragas_llm = llm_factory(judge_model, client=openai_async, max_tokens=4096)
 
+    # --- Faithfulness (RAGAS) ---
     faithfulness_metric = Faithfulness(llm=ragas_llm)
-    relevancy_metric = None
-    if not skip_answer_relevancy:
-        relevancy_metric = AnswerRelevancy(llm=ragas_llm, embeddings=ragas_embeddings, strictness=1)
-
-    # Faithfulness needs retrieved_contexts; AnswerRelevancy only needs user_input + response
     faith_inputs = [
         {"user_input": q, "response": a, "retrieved_contexts": ctx}
         for q, a, ctx in zip(questions, answers, contexts)
     ]
-    relev_inputs = [
-        {"user_input": q, "response": a}
-        for q, a in zip(questions, answers)
-    ]
 
     batch_size = 5
-    faith_results, relev_results = [], []
+    faith_results = []
     for i in range(0, len(faith_inputs), batch_size):
         faith_results += faithfulness_metric.batch_score(faith_inputs[i:i + batch_size])
-        if relevancy_metric is not None:
-            relev_results += relevancy_metric.batch_score(relev_inputs[i:i + batch_size])
-        print(f"  RAGAS scored {min(i + batch_size, len(faith_inputs))}/{len(faith_inputs)} questions...")
+        print(f"  Faithfulness scored {min(i + batch_size, len(faith_inputs))}/{len(faith_inputs)}...")
+
+    # --- Correctness & Completeness (LLM-as-judge) ---
+    judge_results = []
+    if not skip_correctness:
+        print(f"\n  Scoring correctness & completeness with {judge_model}...")
+        for i, (q, a) in enumerate(zip(questions, answers)):
+            result = _judge_answer(openai_sync, judge_model, q, a)
+            judge_results.append(result)
+            print(f"  [{i + 1:>2}/{total}] correctness={result['correctness']:.2f}  completeness={result['completeness']:.2f}  {q[:50]}...")
 
     faithfulness_score = sum(r.value for r in faith_results) / len(faith_results)
-    scores = {
+    scores: dict = {
         "faithfulness": round(faithfulness_score, 4),
     }
-    if relev_results:
-        relevancy_score = sum(r.value for r in relev_results) / len(relev_results)
-        scores["answer_relevancy"] = round(relevancy_score, 4)
+
+    # Per-question details
+    for i, pair in enumerate(qa_pairs):
+        pair["faithfulness"] = round(faith_results[i].value, 4)
+        if judge_results:
+            pair["correctness"] = judge_results[i]["correctness"]
+            pair["completeness"] = judge_results[i]["completeness"]
+
+    if judge_results:
+        avg_correctness = sum(r["correctness"] for r in judge_results) / len(judge_results)
+        avg_completeness = sum(r["completeness"] for r in judge_results) / len(judge_results)
+        scores["correctness"] = round(avg_correctness, 4)
+        scores["completeness"] = round(avg_completeness, 4)
+
+    scores["details"] = qa_pairs
     return scores
 
 
 METRIC_META = {
-    "hit_rate_at_1":       ("Hit Rate @1",       "Source chunk ranked 1st"),
-    "hit_rate_at_3":       ("Hit Rate @3",        "Source chunk in top 3"),
-    "hit_rate_at_5":       ("Hit Rate @5",        "Source chunk in top 5"),
-    "hit_rate_at_10":      ("Hit Rate @10",       "Source chunk in top 10"),
-    "mrr":                 ("MRR",                "Mean Reciprocal Rank"),
-    "boundary_hit_rate":   ("Boundary Hit Rate",  "Misses where adjacent chunk found → chunking issue"),
-    "faithfulness":        ("Faithfulness",       "Answer grounded in retrieved chunks"),
-    "answer_relevancy":    ("Answer Relevancy",   "Answer addresses the question"),
+    "hit_rate_at_1":       ("Hit Rate @1",       "Acceptable chunk ranked 1st"),
+    "hit_rate_at_3":       ("Hit Rate @3",       "Acceptable chunk in top 3"),
+    "hit_rate_at_5":       ("Hit Rate @5",       "Acceptable chunk in top 5"),
+    "hit_rate_at_10":      ("Hit Rate @10",      "Acceptable chunk in top 10"),
+    "mrr":                 ("MRR",               "Mean Reciprocal Rank"),
+    "boundary_hit_rate":   ("Boundary Hit Rate", "Misses where adjacent chunk found → chunking issue"),
+    "faithfulness":        ("Faithfulness",      "Answer grounded in retrieved chunks"),
+    "correctness":         ("Correctness",       "Answer correctly addresses the question"),
+    "completeness":        ("Completeness",      "Answer covers all key points needed"),
 }
 
 
@@ -306,11 +387,11 @@ def print_report(retrieval: dict | None, generation: dict | None, n: int, elapse
         else:
             hit_k = retrieval.get("hit_rate_at_3", retrieval.get("hit_rate_at_1", 1.0))
             hit_k_name = "retrieval hit rate"
-    
+
         boundary = retrieval.get("boundary_hit_rate", 0.0)
         missed = retrieval.get("_missed", 0)
         boundary_hits = retrieval.get("_boundary_hits", 0)
-    
+
         if hit_k < 0.5:
             issues_found = True
             if boundary > 0.4:
@@ -326,7 +407,7 @@ def print_report(retrieval: dict | None, generation: dict | None, n: int, elapse
             print(f"  ⚠ PARTIAL CHUNKING ISSUE : {boundary_hits}/{missed} misses found adjacent chunks.")
             print(f"    Some concepts are split across boundaries. Not critical but worth investigating.")
             print(f"    → Consider slightly increasing CHUNK_OVERLAP in pdf6.py.")
-        
+
     if generation:
         faith = generation.get("faithfulness", generation.get("Faithfulness", 1.0))
         if isinstance(faith, float) and faith < 0.6:
@@ -358,15 +439,20 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate the PostgreSQL RAG pipeline.")
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET,
                         help="eval_dataset.json produced by generate_dataset.py")
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Output JSON file. If omitted, a dataset-specific filename is used.",
+    )
     parser.add_argument("--top-k", type=int, default=5,
                         help="Number of chunks retrieved during evaluation (default: 5)")
     parser.add_argument("--retrieval-only", action="store_true",
                         help="Skip RAGAS generation evaluation (faster, no extra API cost)")
     parser.add_argument("--judge-model", default=default_judge_model,
                         help="Model used by RAGAS to score outputs. Defaults to BENCHMARK_JUDGE_MODEL or LLM_MODEL.")
-    parser.add_argument("--skip-answer-relevancy", action="store_true",
-                        help="Score faithfulness only to reduce evaluation cost.")
+    parser.add_argument("--skip-correctness", action="store_true",
+                        help="Score faithfulness only, skip LLM-as-judge correctness/completeness.")
     parser.add_argument("--limit", type=int, default=None,
                         help="Only evaluate the first N questions (useful for quick testing)")
     args = parser.parse_args()
@@ -379,6 +465,8 @@ def main():
     with open(args.dataset, encoding="utf-8") as f:
         dataset = json.load(f)
 
+    output_path = args.output if args.output is not None else _default_output_for_dataset(args.dataset)
+
     if args.limit is not None:
         dataset = dataset[:args.limit]
 
@@ -389,6 +477,8 @@ def main():
     print(f"  Embedding : {rag_service.EMBEDDING_MODEL}")
     print(f"  Threshold : {rag_service.SIMILARITY_THRESHOLD}")
     print(f"  Top-k     : {args.top_k}\n")
+    print(f"  Collection: {rag_service.COLLECTION_NAME}")
+    print(f"  Output    : {output_path.name}")
 
     t_start = time.time()
 
@@ -402,13 +492,13 @@ def main():
         generation_scores = evaluate_generation(
             dataset,
             judge_model=args.judge_model,
-            skip_answer_relevancy=args.skip_answer_relevancy,
+            skip_correctness=args.skip_correctness,
         )
 
     elapsed = time.time() - t_start
 
     print_report(retrieval_scores, generation_scores, len(dataset), elapsed)
-    save_results(retrieval_scores, generation_scores, len(dataset), args.output)
+    save_results(retrieval_scores, generation_scores, len(dataset), output_path)
 
 
 if __name__ == "__main__":

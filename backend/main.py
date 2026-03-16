@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from openai import AuthenticationError, RateLimitError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -19,9 +20,15 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    missing = [v for v in ("OPENAI_API_KEY", "DATABASE_URL") if not os.getenv(v)]
+    if missing:
+        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
     if rag_service.RERANKER_ENABLED:
-        rag_service._get_reranker()
-        logger.info("Reranker preloaded")
+        if rag_service.COHERE_API_KEY:
+            rag_service._get_cohere_client()
+            logger.info("Cohere reranker client ready")
+        rag_service._get_fallback_reranker()
+        logger.info("Fallback cross-encoder preloaded")
     yield
 
 
@@ -46,7 +53,15 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    try:
+        import psycopg
+        conn_str = rag_service.DATABASE_URL.replace("postgresql+psycopg://", "postgresql://")
+        with psycopg.connect(conn_str, connect_timeout=3) as conn:
+            conn.execute("SELECT 1")
+        return {"status": "ok", "db": "ok"}
+    except Exception as e:
+        logger.warning(f"Health check DB probe failed: {e}")
+        raise HTTPException(status_code=503, detail={"status": "degraded", "db": "unreachable"})
 
 
 @app.post("/ask")
@@ -91,3 +106,14 @@ def ask(request: Request, question: QuestionRequest) -> AnswerResponse:
             status_code=500,
             detail="An unexpected error occurred. Please try again."
         )
+
+
+@app.post("/ask/stream")
+@limiter.limit("15/minute")
+def ask_stream(request: Request, question: QuestionRequest):
+    logger.info(f"[STREAM] Question received: {question.message[:100]}...")
+    return StreamingResponse(
+        rag_service.stream_answer(question),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

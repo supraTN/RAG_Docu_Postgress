@@ -23,6 +23,21 @@ scripts/postgres_rag_data_*.json
 postgresql-*/
 scriptv2/
 
+# ── Benchmark output (re-runnable) ──
+benchmark/evaluation_results*.json
+
+# ── Test artifacts ──
+.pytest_cache/
+backend/.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Ruff cache ──
+.ruff_cache/
+
+# ── Frontend local env ──
+frontend/.env.local
+
 # ── OS / IDE ──
 .DS_Store
 Thumbs.db

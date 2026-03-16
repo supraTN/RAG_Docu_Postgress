@@ -17,7 +17,9 @@ export default function ChatInterface() {
     messages,
     input,
     isLoading,
+    model,
     setInput,
+    setModel,
     sendMessage,
     startNewChat,
     messagesEndRef,
@@ -48,7 +50,7 @@ export default function ChatInterface() {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-semibold text-emerald-500/80 tracking-wide uppercase">
-              Système RAG Actif
+              RAG System Active
             </span>
           </div>
           <ChevronRight className="w-3 h-3 text-zinc-700 mx-3" />
@@ -102,8 +104,10 @@ export default function ChatInterface() {
         <ChatInput
           input={input}
           isLoading={isLoading}
+          model={model}
           textareaRef={textareaRef}
           onChange={setInput}
+          onModelChange={setModel}
           onSend={() => sendMessage(input)}
         />
       </main>
