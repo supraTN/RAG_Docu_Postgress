@@ -239,7 +239,7 @@ def _judge_answer(client, model: str, question: str, answer: str) -> dict:
             {"role": "user", "content": f"**Question:** {question}\n\n**Answer:** {answer}"},
         ],
         temperature=0,
-        max_tokens=100,
+        max_completion_tokens=100,
     )
     import re
     text = resp.choices[0].message.content.strip()
@@ -283,7 +283,7 @@ def evaluate_generation(
 
     openai_async = AsyncOpenAI(api_key=rag_service.OPENAI_API_KEY)
     openai_sync = OpenAI(api_key=rag_service.OPENAI_API_KEY)
-    ragas_llm = llm_factory(judge_model, client=openai_async, max_tokens=4096)
+    ragas_llm = llm_factory(judge_model, client=openai_async, max_tokens=16000)
 
     # --- Faithfulness (RAGAS) ---
     faithfulness_metric = Faithfulness(llm=ragas_llm)

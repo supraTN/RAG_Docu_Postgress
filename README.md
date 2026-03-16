@@ -20,27 +20,28 @@ A full-stack **Retrieval-Augmented Generation (RAG)** application that answers q
 
 ## Evaluation Results
 
-Evaluated on 10 natural-language user questions and 39 technical questions from the PostgreSQL 16 docs:
+Evaluated on 40 natural-language user-style questions and 39 technical questions from the PostgreSQL 16 docs (79 total):
 
 ```
 ════════════════════════════════════════════════════════════════════════════
-  RAG EVALUATION REPORT — PostgreSQL Docs Assistant
+  RAG EVALUATION REPORT — PostgreSQL Docs Assistant (combined)
 ════════════════════════════════════════════════════════════════════════════
 
   ── RETRIEVAL ────────────────────────────────────────────────────────────
-  Hit Rate @1          Acceptable chunk ranked 1st          0.900  ██████████████████░░  GOOD
+  Hit Rate @1          Acceptable chunk ranked 1st          0.937  ██████████████████░░  GOOD
   Hit Rate @3          Acceptable chunk in top 3            1.000  ████████████████████  GOOD
   Hit Rate @5          Acceptable chunk in top 5            1.000  ████████████████████  GOOD
-  MRR                  Mean Reciprocal Rank                 0.950  ███████████████████░  GOOD
+  MRR                  Mean Reciprocal Rank                 0.968  ███████████████████░  GOOD
 
   ── GENERATION ─────────────────────────────────────────────────────────
-  Faithfulness         Answer grounded in chunks            0.993  ███████████████████░  GOOD
-  Correctness          Answer addresses the question        0.970  ███████████████████░  GOOD
-  Completeness         Answer covers key points             0.970  ███████████████████░  GOOD
+  Faithfulness         Answer grounded in chunks            0.935  ██████████████████░░  GOOD
+  Correctness          Answer addresses the question        0.996  ███████████████████░  GOOD
+  Completeness         Answer covers key points             0.996  ███████████████████░  GOOD
 ════════════════════════════════════════════════════════════════════════════
 ```
 
 On technical questions, Hit Rate @1 reaches **100%** (MRR = 1.0, zero misses).
+On user-style questions, Correctness and Completeness reach **100%**.
 
 ---
 
@@ -172,7 +173,7 @@ All runtime settings are controlled via environment variables — no hardcoded v
 | `DATABASE_URL` | — | PostgreSQL connection string (required) |
 | `LLM_MODEL` | `gpt-5-mini` | Chat completion model |
 | `EMBEDDING_MODEL` | `text-embedding-3-large` | Embedding model |
-| `COLLECTION_NAME` | `postgres_docs_v9` | pgvector collection name |
+| `COLLECTION_NAME` | `postgres_docs_v10` | pgvector collection name |
 | `SIMILARITY_THRESHOLD` | `0.4` | Minimum cosine similarity (raw embedding scores) |
 | `RERANKER_ENABLED` | `true` | Enable reranking stage |
 | `COHERE_API_KEY` | — | Cohere API key (optional — enables Cohere Rerank) |

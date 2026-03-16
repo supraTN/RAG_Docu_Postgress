@@ -4,6 +4,15 @@
 
 set ROOT=%~dp0..
 
+if not exist "%ROOT%\frontend\node_modules" (
+  echo [start] Frontend dependencies not found. Installing...
+  if exist "%ROOT%\frontend\package-lock.json" (
+    call npm --prefix "%ROOT%\frontend" ci || (echo [error] npm ci failed & exit /b 1)
+  ) else (
+    call npm --prefix "%ROOT%\frontend" install || (echo [error] npm install failed & exit /b 1)
+  )
+)
+
 echo [start] Starting FastAPI backend on http://localhost:8000
 start "RAG Backend" cmd /k "cd /d %ROOT%\backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000"
 

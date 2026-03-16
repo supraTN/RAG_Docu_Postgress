@@ -1,25 +1,25 @@
 .DEFAULT_GOAL := help
 
 # ── OS / shell detection ──────────────────────────────────────────────────────
-# On Windows: use .bat if bash is not available, bash scripts otherwise
 ifeq ($(OS),Windows_NT)
-    ifeq ($(shell where bash 2>nul),)
-        SETUP_CMD = scripts\setup.bat
-        START_CMD  = scripts\start.bat
-    else
-        SETUP_CMD = bash scripts/setup.sh
-        START_CMD  = bash scripts/start.sh
-    endif
+    # Always use native Windows commands to avoid WSL/Git-Bash path translation issues.
+    SETUP_CMD = scripts\setup.bat
+    START_CMD  = scripts\start.bat
+    PYTHON_CMD = .venv\Scripts\python.exe
+    PYTHON_CMD_SUBDIR = ..\.venv\Scripts\python.exe
 else
     SETUP_CMD = bash scripts/setup.sh
     START_CMD  = bash scripts/start.sh
+    PYTHON_CMD = .venv/bin/python
+    PYTHON_CMD_SUBDIR = ../.venv/bin/python
 endif
+PIP_CMD = "$(PYTHON_CMD)" -m pip
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 setup: ## Full first-time setup: download docs, start DB, embed + install all deps
 	$(SETUP_CMD)
-	pip install -q -r backend/requirements-dev.txt
-	pip install -q -r benchmark/requirements.txt
+	$(PIP_CMD) install -r backend/requirements-dev.txt
+	$(PIP_CMD) install -r benchmark/requirements.txt
 
 # ── Development ───────────────────────────────────────────────────────────────
 start: ## Start both frontend and backend
@@ -43,44 +43,44 @@ db-logs: ## Tail PostgreSQL container logs
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 test: ## Install dev deps and run all backend unit tests
-	pip install -q -r backend/requirements-dev.txt
-	cd backend && python -m pytest tests/ -v
+	$(PIP_CMD) install -q -r backend/requirements-dev.txt
+	cd backend && "$(PYTHON_CMD_SUBDIR)" -m pytest tests/ -v
 
 test-quick: ## Install dev deps and run tests, stop on first failure
-	pip install -q -r backend/requirements-dev.txt
-	cd backend && python -m pytest tests/ -x -v
+	$(PIP_CMD) install -q -r backend/requirements-dev.txt
+	cd backend && "$(PYTHON_CMD_SUBDIR)" -m pytest tests/ -x -v
 
 # ── Benchmarking ──────────────────────────────────────────────────────────────
 dataset: ## Generate technical Q&A evaluation dataset (uses OpenAI API)
-	pip install -q -r benchmark/requirements.txt
-	cd benchmark && python generate_dataset.py
+	$(PIP_CMD) install -q -r benchmark/requirements.txt
+	cd benchmark && "$(PYTHON_CMD_SUBDIR)" generate_dataset.py
 
 dataset-userstyle: ## Generate user-style Q&A evaluation dataset (uses OpenAI API)
-	pip install -q -r benchmark/requirements.txt
-	cd benchmark && python generate_dataset.py --style userstyle
+	$(PIP_CMD) install -q -r benchmark/requirements.txt
+	cd benchmark && "$(PYTHON_CMD_SUBDIR)" generate_dataset.py --style userstyle
 
 eval-retrieval: ## Run retrieval-only evaluation on technical dataset (fast, free)
-	pip install -q -r benchmark/requirements.txt
-	cd benchmark && python evaluate.py --retrieval-only
+	$(PIP_CMD) install -q -r benchmark/requirements.txt
+	cd benchmark && "$(PYTHON_CMD_SUBDIR)" evaluate.py --retrieval-only
 
 eval-retrieval-userstyle: ## Run retrieval-only evaluation on user-style dataset (fast, free)
-	pip install -q -r benchmark/requirements.txt
-	cd benchmark && python evaluate.py --retrieval-only --dataset eval_dataset_userstyle.json
+	$(PIP_CMD) install -q -r benchmark/requirements.txt
+	cd benchmark && "$(PYTHON_CMD_SUBDIR)" evaluate.py --retrieval-only --dataset eval_dataset_userstyle.json
 
 eval-full: ## Run full evaluation on technical dataset (retrieval + generation, uses OpenAI API)
-	pip install -q -r benchmark/requirements.txt
-	cd benchmark && python evaluate.py
+	$(PIP_CMD) install -q -r benchmark/requirements.txt
+	cd benchmark && "$(PYTHON_CMD_SUBDIR)" evaluate.py
 
 eval-full-userstyle: ## Run full evaluation on user-style dataset (uses OpenAI API)
-	pip install -q -r benchmark/requirements.txt
-	cd benchmark && python evaluate.py --dataset eval_dataset_userstyle.json
+	$(PIP_CMD) install -q -r benchmark/requirements.txt
+	cd benchmark && "$(PYTHON_CMD_SUBDIR)" evaluate.py --dataset eval_dataset_userstyle.json
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
 health: ## Check backend health endpoint
-	curl -s http://localhost:8000/health | python -m json.tool
+	curl -s http://localhost:8000/health | "$(PYTHON_CMD)" -m json.tool
 
 lint: ## Run ruff linter on backend code
-	cd backend && python -m ruff check .
+	cd backend && "$(PYTHON_CMD_SUBDIR)" -m ruff check .
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

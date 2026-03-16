@@ -29,8 +29,17 @@ BACKEND_PID=$!
 
 # ── Frontend ─────────────────────────────────────────────────────────────────
 
-info "Starting Next.js frontend on http://localhost:3000"
 cd "${ROOT_DIR}/frontend"
+if [ ! -d "${ROOT_DIR}/frontend/node_modules" ]; then
+  info "Frontend dependencies not found. Installing..."
+  if [ -f "${ROOT_DIR}/frontend/package-lock.json" ]; then
+    npm ci
+  else
+    npm install
+  fi
+fi
+
+info "Starting Next.js frontend on http://localhost:3000"
 npm run dev > /tmp/rag_frontend.log 2>&1 &
 FRONTEND_PID=$!
 
