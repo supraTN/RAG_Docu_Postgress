@@ -10,7 +10,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-DATABASE_URL = os.getenv("DATABASE_URL")
+_raw_db_url = os.getenv("DATABASE_URL", "")
+# Railway provides postgresql:// but langchain-postgres needs postgresql+psycopg://
+if _raw_db_url.startswith("postgresql://"):
+    DATABASE_URL = _raw_db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+else:
+    DATABASE_URL = _raw_db_url
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5-mini")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-large")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "postgres_docs_v10")
