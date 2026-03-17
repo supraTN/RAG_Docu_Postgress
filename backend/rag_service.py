@@ -11,11 +11,17 @@ load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 _raw_db_url = os.getenv("DATABASE_URL", "")
-# Railway provides postgresql:// but langchain-postgres needs postgresql+psycopg://
-if _raw_db_url.startswith("postgresql://"):
+# Normalize DB URL for SQLAlchemy + psycopg3
+if _raw_db_url.startswith("postgres://"):
+    DATABASE_URL = _raw_db_url.replace("postgres://", "postgresql+psycopg://", 1)
+elif _raw_db_url.startswith("postgresql://"):
     DATABASE_URL = _raw_db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+elif _raw_db_url.startswith("postgresql+psycopg://"):
+    DATABASE_URL = _raw_db_url
 else:
     DATABASE_URL = _raw_db_url
+import logging as _logging
+_logging.getLogger(__name__).info(f"DATABASE_URL scheme: {DATABASE_URL.split('://')[0] if '://' in DATABASE_URL else 'EMPTY/INVALID'}")
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5-mini")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-large")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "postgres_docs_v10")
