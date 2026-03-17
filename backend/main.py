@@ -27,8 +27,9 @@ async def lifespan(_app: FastAPI):
         if rag_service.COHERE_API_KEY:
             rag_service._get_cohere_client()
             logger.info("Cohere reranker client ready")
-        rag_service._get_fallback_reranker()
-        logger.info("Fallback cross-encoder preloaded")
+        else:
+            rag_service._get_fallback_reranker()
+            logger.info("Fallback cross-encoder preloaded")
     yield
 
 

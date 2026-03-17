@@ -97,8 +97,9 @@ def rerank_docs(
         try:
             return _rerank_cohere(question, docs_and_scores)
         except Exception as e:
-            logger.warning(f"Cohere rerank failed, using fallback: {e}")
-    # Fallback to local cross-encoder
+            logger.warning(f"Cohere rerank failed, skipping reranking: {e}")
+            return docs_and_scores
+    # Fallback to local cross-encoder (only if no Cohere key)
     return _rerank_fallback(question, docs_and_scores)
 
 
