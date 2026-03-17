@@ -27,7 +27,7 @@ export default function ChatInterface() {
   } = useChat();
 
   return (
-    <div className="flex h-screen bg-black text-white selection:bg-blue-500/30">
+    <div className="flex h-screen overflow-hidden bg-black text-white selection:bg-blue-500/30">
       <Sidebar
         isOpen={isSidebarOpen}
         messages={messages}
