@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Message, ModelOption } from "@/app/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -44,7 +44,7 @@ export function useChat() {
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
 
     try {
-      const response = await fetch(`${API_URL}/ask/stream`, {
+      const response = await fetch(`${API_URL}/api/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: question.trim(), history, model }),

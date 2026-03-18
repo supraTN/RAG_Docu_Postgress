@@ -6,7 +6,7 @@ MAX_HISTORY_LENGTH = 20
 
 class ChatMessage(BaseModel):
     role: Literal["user", "ai"]
-    content: str
+    content: str = Field(max_length=5000)
 
 
 ALLOWED_MODELS = ("gpt-4.1-mini", "gpt-5-mini")
