@@ -26,7 +26,7 @@ export default function WelcomeScreen({ onSelect }: WelcomeScreenProps) {
         PostgreSQL <span className="text-blue-500">Docs Assistant</span>
       </h2>
       <p className="text-zinc-400 max-w-lg mb-12 text-lg leading-relaxed">
-        L&apos;intelligence artificielle au service de votre base de donnÃ©es.
+        L&apos;intelligence artificielle au service de votre base de données.
         Posez vos questions sur la documentation officielle.
       </p>
 

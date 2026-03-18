@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PostgreSQL RAG · Documentation Assistant",
   description:
-    "Intelligent Q&A system for PostgreSQL documentation, powered by RAG and GPT-4o mini.",
+    "Intelligent Q&A system for PostgreSQL documentation, powered by RAG and GPT-4.1-mini.",
 };
 
 export default function RootLayout({
