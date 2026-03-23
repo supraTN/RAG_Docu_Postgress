@@ -10,8 +10,8 @@ export type Message = {
 };
 
 export const SUGGESTED_QUESTIONS = [
-  "How do indexes improve query performance?",
-  "What is MVCC in PostgreSQL?",
-  "How do I write efficient CTEs?",
-  "What is the difference between INNER and LEFT JOIN?",
+  "Comment les index améliorent-ils les performances des requêtes ?",
+  "Qu'est-ce que le MVCC dans PostgreSQL ?",
+  "Comment écrire des CTE efficaces ?",
+  "Quelle est la différence entre INNER JOIN et LEFT JOIN ?",
 ] as const;

@@ -40,7 +40,7 @@ export default function ChatInterface() {
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="absolute top-4 left-4 p-2 hover:bg-zinc-900 rounded-lg transition-colors z-30 bg-black border border-zinc-800"
-            aria-label="Open sidebar"
+            aria-label="Ouvrir la barre latérale"
           >
             <PanelLeft className="w-5 h-5 text-zinc-400" />
           </button>
@@ -50,7 +50,7 @@ export default function ChatInterface() {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-semibold text-emerald-500/80 tracking-wide uppercase">
-              RAG System Active
+              Système RAG Actif
             </span>
           </div>
           <ChevronRight className="w-3 h-3 text-zinc-700 mx-3" />

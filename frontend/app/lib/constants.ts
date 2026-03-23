@@ -1,6 +1,6 @@
 export const EVAL_METRICS = {
   userStyle: {
-    label: "User-Style Questions",
+    label: "Questions type utilisateur",
     count: 40,
     retrieval: {
       "Hit Rate @1": 0.875,
@@ -15,7 +15,7 @@ export const EVAL_METRICS = {
     },
   },
   technical: {
-    label: "Technical Questions",
+    label: "Questions techniques",
     count: 39,
     retrieval: {
       "Hit Rate @1": 1.0,
@@ -35,7 +35,7 @@ export const PIPELINE_STEPS = [
   {
     label: "Query",
     icon: "MessageSquare" as const,
-    description: "User question input",
+    description: "Question de l'utilisateur",
   },
   {
     label: "Embed",
@@ -55,7 +55,7 @@ export const PIPELINE_STEPS = [
   {
     label: "Filter",
     icon: "Filter" as const,
-    description: "Adaptive score ratio",
+    description: "Ratio de score adaptatif",
   },
   {
     label: "Generate",
@@ -101,23 +101,23 @@ export const METRIC_EXPLANATIONS: Record<string, string> = {
 
 export const HIGHLIGHTS = [
   {
-    title: "Dual-Stage Retrieval",
+    title: "Récupération en deux étapes",
     description:
-      "Vector similarity search followed by neural reranking for precision.",
+      "Recherche par similarité vectorielle suivie d'un reclassement neuronal pour plus de précision.",
   },
   {
-    title: "Adaptive Filtering",
+    title: "Filtrage Adaptatif",
     description:
-      "Dynamic score thresholds that adapt to query difficulty automatically.",
+      "Seuils de score dynamiques qui s'adaptent automatiquement à la difficulté de la requête.",
   },
   {
     title: "Streaming SSE",
     description:
-      "Real-time token-by-token response streaming for instant feedback.",
+      "Streaming de la réponse token par token en temps réel pour un retour instantané.",
   },
   {
-    title: "Unbiased Evaluation",
+    title: "Évaluation sans Biais",
     description:
-      "Ground truth generated from chunks, not from the retriever itself.",
+      "La vérité terrain est générée depuis les chunks, pas depuis le retriever lui-même.",
   },
 ];

@@ -42,7 +42,7 @@ export default function ChatInput({
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
-              placeholder="Ask a question about PostgreSQL..."
+              placeholder="Posez votre question sur PostgreSQL..."
               rows={1}
               className="w-full bg-transparent px-4 py-3 text-[15px] text-white placeholder-zinc-500 focus:outline-none resize-none disabled:opacity-50 leading-relaxed min-h-[50px] max-h-[200px]"
             />

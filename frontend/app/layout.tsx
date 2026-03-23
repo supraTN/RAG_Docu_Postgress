@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PostgreSQL RAG · Documentation Assistant",
+  title: "Assistant RAG · Documentation PostgreSQL",
   description:
-    "Intelligent Q&A system for PostgreSQL documentation, powered by RAG and GPT-4.1-mini.",
+    "Système de questions-réponses intelligent pour la documentation PostgreSQL, propulsé par un pipeline RAG et GPT-4.1-mini.",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
